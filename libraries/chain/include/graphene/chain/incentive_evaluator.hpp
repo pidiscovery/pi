@@ -21,15 +21,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <fc/smart_ref_impl.hpp>
-#include "db_balance.cpp"
-#include "db_block.cpp"
-#include "db_debug.cpp"
-#include "db_getter.cpp"
-#include "db_init.cpp"
-#include "db_maint.cpp"
-#include "db_management.cpp"
-#include "db_market.cpp"
-#include "db_update.cpp"
-#include "db_witness_schedule.cpp"
-#include "db_incentive.cpp"
+
+#pragma once
+
+#include <graphene/chain/evaluator.hpp>
+#include <graphene/chain/protocol/types.hpp>
+
+namespace graphene { namespace chain {
+    class incentive_evaluator : public evaluator<incentive_evaluator> {
+    public:
+        typedef incentive_operation operation_type;
+
+        void_result do_evaluate( const incentive_operation& o );
+        void_result do_apply( const incentive_operation& o ) ;
+
+//        virtual void pay_fee() override;
+
+    };
+}} // graphene::chain
+
+

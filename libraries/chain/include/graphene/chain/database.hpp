@@ -379,6 +379,10 @@ namespace graphene { namespace chain {
          asset pay_market_fees( const asset_object& recv_asset, const asset& receives );
 
 
+         //////////////////// db_incentive.cpp ////////////////////
+         bool generate_incentive_transaction(signed_transaction& tx);
+         void apply_incentive(const processed_transaction &tx);
+
          ///@}
          /**
           *  This method validates transactions without adding it to the pending state.
@@ -474,7 +478,7 @@ namespace graphene { namespace chain {
           * order they occur and is cleared after the applied_block signal is
           * emited.
           */
-         vector<optional<operation_history_object> >  _applied_ops;
+        vector<optional<operation_history_object> >  _applied_ops;
 
          uint32_t                          _current_block_num    = 0;
          uint16_t                          _current_trx_in_block = 0;

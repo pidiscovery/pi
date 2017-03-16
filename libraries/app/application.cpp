@@ -161,38 +161,38 @@ namespace detail {
                }
             }
          }
-         else
-         {
-            vector<string> seeds = {
-               "104.236.144.84:1777",               // puppies
-               "128.199.143.47:2015",               // Harvey
-               "185.25.22.21:1776",                 // liondani (Greece)
-               "bitshares.openledger.info:1776",    // OpenLedger
-               "bts-seed1.abit-more.com:62015",     // abit
-               "seed.bitsharesnodes.com:1776",      // wackou
-               "seed.blocktrades.us:1776",          // BlockTrades
-               "seed.roelandp.nl:1776",             // roelandp (Canada)
-               "seed02.bitsharesnodes.com:1776",
-               "seed04.bitsharesnodes.com:1776",    // Thom
-               "seed05.bitsharesnodes.com:1776",    // Thom
-               "seed06.bitsharesnodes.com:1776",    // Thom
-               "seed07.bitsharesnodes.com:1776"     // Thom
-            };
-            for( const string& endpoint_string : seeds )
-            {
-               try {
-                  std::vector<fc::ip::endpoint> endpoints = resolve_string_to_ip_endpoints(endpoint_string);
-                  for (const fc::ip::endpoint& endpoint : endpoints)
-                  {
-                     ilog("Adding seed node ${endpoint}", ("endpoint", endpoint));
-                     _p2p_network->add_node(endpoint);
-                  }
-               } catch( const fc::exception& e ) {
-                  wlog( "caught exception ${e} while adding seed node ${endpoint}",
-                           ("e", e.to_detail_string())("endpoint", endpoint_string) );
-               }
-            }
-         }
+//         else
+//         {
+//            vector<string> seeds = {
+//               "104.236.144.84:1777",               // puppies
+//               "128.199.143.47:2015",               // Harvey
+//               "185.25.22.21:1776",                 // liondani (Greece)
+//               "bitshares.openledger.info:1776",    // OpenLedger
+//               "bts-seed1.abit-more.com:62015",     // abit
+//               "seed.bitsharesnodes.com:1776",      // wackou
+//               "seed.blocktrades.us:1776",          // BlockTrades
+//               "seed.roelandp.nl:1776",             // roelandp (Canada)
+//               "seed02.bitsharesnodes.com:1776",
+//               "seed04.bitsharesnodes.com:1776",    // Thom
+//               "seed05.bitsharesnodes.com:1776",    // Thom
+//               "seed06.bitsharesnodes.com:1776",    // Thom
+//               "seed07.bitsharesnodes.com:1776"     // Thom
+//            };
+//            for( const string& endpoint_string : seeds )
+//            {
+//               try {
+//                  std::vector<fc::ip::endpoint> endpoints = resolve_string_to_ip_endpoints(endpoint_string);
+//                  for (const fc::ip::endpoint& endpoint : endpoints)
+//                  {
+//                     ilog("Adding seed node ${endpoint}", ("endpoint", endpoint));
+//                     _p2p_network->add_node(endpoint);
+//                  }
+//               } catch( const fc::exception& e ) {
+//                  wlog( "caught exception ${e} while adding seed node ${endpoint}",
+//                           ("e", e.to_detail_string())("endpoint", endpoint_string) );
+//               }
+//            }
+//         }
 
          if( _options->count("p2p-endpoint") )
             _p2p_network->listen_on_endpoint(fc::ip::endpoint::from_string(_options->at("p2p-endpoint").as<string>()), true);

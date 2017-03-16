@@ -1252,6 +1252,12 @@ class wallet_api
       signed_transaction create_witness(string owner_account,
                                         string url,
                                         bool broadcast = false);
+    
+      signed_transaction create_witness1(string owner_account,
+                                      public_key_type sign_public_key,
+                                      string url,
+                                      bool broadcast /* = false */);
+
 
       /**
        * Update a witness object owned by the given account.
@@ -1639,6 +1645,7 @@ FC_API( graphene::wallet::wallet_api,
         (list_witnesses)
         (list_committee_members)
         (create_witness)
+        (create_witness1)
         (update_witness)
         (create_worker)
         (update_worker_votes)
@@ -1650,6 +1657,7 @@ FC_API( graphene::wallet::wallet_api,
         (set_desired_witness_and_committee_member_count)
         (get_account)
         (get_account_id)
+        (get_asset_id)
         (get_block)
         (get_account_count)
         (get_account_history)

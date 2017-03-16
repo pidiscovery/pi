@@ -1467,6 +1467,35 @@ public:
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (owner_account)(broadcast) ) }
 
+    signed_transaction create_witness(string owner_account,
+                                      public_key_type witness_public_key,
+                                      string url,
+                                      bool broadcast /* = false */)
+    { try {
+        account_object witness_account = get_account(owner_account);
+//        fc::ecc::private_key active_private_key = get_private_key_for_account(witness_account);
+//        int witness_key_index = find_first_unused_derived_key_index(active_private_key);
+//        fc::ecc::private_key witness_private_key = derive_private_key(key_to_wif(active_private_key), witness_key_index);
+//        graphene::chain::public_key_type witness_public_key = witness_private_key.get_public_key();
+        
+        witness_create_operation witness_create_op;
+        witness_create_op.witness_account = witness_account.id;
+        witness_create_op.block_signing_key = witness_public_key;
+        witness_create_op.url = url;
+        
+        if (_remote_db->get_witness_by_account(witness_create_op.witness_account))
+            FC_THROW("Account ${owner_account} is already a witness", ("owner_account", owner_account));
+        
+        signed_transaction tx;
+        tx.operations.push_back( witness_create_op );
+        set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+        tx.validate();
+        
+//        _wallet.pending_witness_registrations[owner_account] = key_to_wif(witness_private_key);
+        
+        return sign_transaction( tx, broadcast );
+    } FC_CAPTURE_AND_RETHROW( (owner_account)(broadcast) ) }
+
    signed_transaction update_witness(string witness_name,
                                      string url,
                                      string block_signing_key,
@@ -2987,12 +3016,12 @@ bool wallet_api::import_key(string account_name_or_id, string wif_key)
    if (!optional_private_key)
       FC_THROW("Invalid private key");
    string shorthash = detail::address_to_shorthash(optional_private_key->get_public_key());
-   copy_wallet_file( "before-import-key-" + shorthash );
+//   copy_wallet_file( "before-import-key-" + shorthash );
 
    if( my->import_key(account_name_or_id, wif_key) )
    {
-      save_wallet_file();
-      copy_wallet_file( "after-import-key-" + shorthash );
+//      save_wallet_file();
+//      copy_wallet_file( "after-import-key-" + shorthash );
       return true;
    }
    return false;
@@ -3278,6 +3307,14 @@ signed_transaction wallet_api::create_witness(string owner_account,
    return my->create_witness(owner_account, url, broadcast);
 }
 
+signed_transaction wallet_api::create_witness1(string owner_account,
+                                              public_key_type sign_public_key,
+                                              string url,
+                                              bool broadcast /* = false */)
+{
+    return my->create_witness(owner_account, sign_public_key, url, broadcast);
+}
+    
 signed_transaction wallet_api::create_worker(
    string owner_account,
    time_point_sec work_begin_date,

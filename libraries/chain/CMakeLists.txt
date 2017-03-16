@@ -20,11 +20,12 @@ if( GRAPHENE_DISABLE_UNITY_BUILD )
         db_market.cpp
         db_update.cpp
         db_witness_schedule.cpp
+        db_incentive.cpp
       )
    message( STATUS "Graphene database unity build disabled" )
 else( GRAPHENE_DISABLE_UNITY_BUILD )
    set( GRAPHENE_DB_FILES
-        database.cpp )
+        database.cpp)
    message( STATUS "Graphene database unity build enabled" )
 endif( GRAPHENE_DISABLE_UNITY_BUILD )
 
@@ -57,6 +58,7 @@ add_library( graphene_chain
              protocol/fee_schedule.cpp
              protocol/confidential.cpp
              protocol/vote.cpp
+             protocol/incentive.cpp
 
              genesis_state.cpp
              get_config.cpp
@@ -79,6 +81,7 @@ add_library( graphene_chain
              confidential_evaluator.cpp
              special_authority.cpp
              buyback.cpp
+             incentive_evaluator.cpp
 
              account_object.cpp
              asset_object.cpp

@@ -32,3 +32,24 @@ add_executable( convert_address convert_address.cpp )
 
 target_link_libraries( convert_address
                        PRIVATE graphene_chain fc ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS} )
+
+install( TARGETS
+        convert_address
+
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        )
+
+
+add_executable( generate_accounts generate_accounts.cpp )
+
+target_link_libraries( generate_accounts
+                       PRIVATE graphene_chain fc graphene_utilities ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS} )
+install( TARGETS
+        generate_accounts
+
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        )

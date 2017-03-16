@@ -21,15 +21,35 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <fc/smart_ref_impl.hpp>
-#include "db_balance.cpp"
-#include "db_block.cpp"
-#include "db_debug.cpp"
-#include "db_getter.cpp"
-#include "db_init.cpp"
-#include "db_maint.cpp"
-#include "db_management.cpp"
-#include "db_market.cpp"
-#include "db_update.cpp"
-#include "db_witness_schedule.cpp"
-#include "db_incentive.cpp"
+
+#pragma once
+
+#include <graphene/chain/protocol/base.hpp>
+#include <graphene/chain/protocol/types.hpp>
+
+namespace graphene { namespace chain {
+    struct incentive_operation : public base_operation {
+        struct fee_parameters_type {uint64_t fee = 0; };
+        
+        incentive_operation() {}
+        incentive_operation(account_id_type acc_id, asset a) 
+            : account_id(acc_id), amount(a) {
+        }
+        account_id_type account_id;
+        asset amount;
+        asset fee;
+
+        account_id_type fee_payer() const {
+            return account_id;
+        }
+
+        void validate() const;
+
+        /// This is a virtual operation; there is no fee
+        share_type      calculate_fee(const fee_parameters_type& k)const { return 0; }
+    };
+}} // graphene::chain
+
+FC_REFLECT( graphene::chain::incentive_operation::fee_parameters_type, (fee) )
+
+FC_REFLECT( graphene::chain::incentive_operation, (account_id)(amount) )
