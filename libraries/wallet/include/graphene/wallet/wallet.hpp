@@ -763,6 +763,28 @@ class wallet_api
          return std::make_pair(trx.id(),trx);
       }
 
+      /** Create a construction capital.
+       * @param account the name or id of the account creating the construction capital
+       * @param amount amount to lock
+       * @param period incentive release period
+       * @param total_periods total release periods
+       * @param broadcast true to broadcast the transaction on the network
+       */
+      signed_transaction create_construction_capital(string account, 
+                                                    string amount, 
+                                                    uint32_t period, 
+                                                    uint16_t total_periods, 
+                                                    bool broadcast = false);
+      /** Use one's own construction capital to accelerate other's incentive release speed.
+       * @param account the name or id of the account who is voting
+       * @param cc_from construction capital id of who is voting
+       * @param cc_to_id construction capital id of who is voted for
+       * @param broadcast true to broadcast the transaction on the network
+       */
+      signed_transaction vote_for_construction_capital(string account, 
+                                                    uint32_t cc_from_id, 
+                                                    uint32_t cc_to_id, 
+                                                    bool broadcast = false);
 
       /**
        *  This method is used to convert a JSON transaction to its transactin ID.
@@ -1625,6 +1647,8 @@ FC_API( graphene::wallet::wallet_api,
         (cancel_order)
         (transfer)
         (transfer2)
+        (create_construction_capital)
+        (vote_for_construction_capital)
         (get_transaction_id)
         (create_asset)
         (update_asset)

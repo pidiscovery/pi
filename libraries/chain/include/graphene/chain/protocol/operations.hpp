@@ -39,6 +39,7 @@
 #include <graphene/chain/protocol/witness.hpp>
 #include <graphene/chain/protocol/worker.hpp>
 #include <graphene/chain/protocol/incentive.hpp>
+#include <graphene/chain/protocol/construction_capital.hpp>
 
 namespace graphene { namespace chain {
 
@@ -93,7 +94,9 @@ namespace graphene { namespace chain {
             asset_settle_cancel_operation,  // VIRTUAL
             asset_claim_fees_operation,
             fba_distribute_operation,        // VIRTUAL
-            incentive_operation     //VIRTUAL
+            incentive_operation,     //VIRTUAL
+            construction_capital_create_operation,
+            construction_capital_vote_operation
          > operation;
 
    /// @} // operations group

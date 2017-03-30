@@ -21,41 +21,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#include <graphene/chain/protocol/construction_capital.hpp>
+#include <graphene/chain/hardfork.hpp>
 
-#pragma once
-
-#include <graphene/chain/protocol/base.hpp>
-#include <graphene/chain/protocol/types.hpp>
 
 namespace graphene { namespace chain {
-   /**
-    * @ingroup operations
-    * @brief Generate an incentive
-    *
-    * This operation is used to generate an incentive
-    * for a specified construction capital for an account
-    */    
-    struct incentive_operation : public base_operation {
-        struct fee_parameters_type {uint64_t fee = 0; };
-        
-        incentive_operation() {}
 
-        share_type amount;
-        asset fee;
-        construction_capital_id_type ccid;
-        uint8_t reason;
+    void construction_capital_create_operation::validate() const {
+        FC_ASSERT( fee.amount >= 0 );
+        FC_ASSERT( amount >= GRAPHENE_DEFAULT_MIN_CONSTRUCTION_CAPITAL_AMOUNT );
+        FC_ASSERT( period >= GRAPHENE_DEFAULT_MIN_CONSTRUCTION_CAPITAL_PERIOD 
+            &&  period <= GRAPHENE_DEFAULT_MAX_CONSTRUCTION_CAPITAL_PERIOD);
+        FC_ASSERT( total_periods >= GRAPHENE_DEFAULT_MIN_CONSTRUCTION_CAPITAL_PERIOD_LEN 
+            &&  total_periods <= GRAPHENE_DEFAULT_MAX_CONSTRUCTION_CAPITAL_PERIOD_LEN );
+    }
 
-        account_id_type fee_payer() const {
-            return GRAPHENE_TEMP_ACCOUNT;
-        }
+    void construction_capital_vote_operation::validate() const {
+    }
+    
 
-        void validate() const;
-
-        /// This is a virtual operation; there is no fee
-        share_type      calculate_fee(const fee_parameters_type& k)const { return 0; }
-    };
 }} // graphene::chain
-
-FC_REFLECT( graphene::chain::incentive_operation::fee_parameters_type, (fee) )
-
-FC_REFLECT( graphene::chain::incentive_operation, (amount)(fee)(ccid)(reason) )

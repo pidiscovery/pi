@@ -23,19 +23,38 @@
  */
 
 #include <graphene/chain/incentive_evaluator.hpp>
+#include <graphene/chain/protocol/construction_capital.hpp>
+#include <graphene/chain/construction_capital_object.hpp>
 
 namespace graphene { namespace chain {
 
-    void_result incentive_evaluator::do_evaluate( const incentive_operation& o ) {
+    void_result incentive_evaluator::do_evaluate( const incentive_operation& op ) {
         return void_result();
     }
 
-    void_result incentive_evaluator::do_apply( const incentive_operation& o ) {
+    void_result incentive_evaluator::do_apply( const incentive_operation& op ) {
+        //modify construction capital
+        auto& index = db().get_index_type<construction_capital_index>().indices().get<by_id>();
+        auto it = index.find(op.ccid);
+        //update next slot time and achieved count
+        db().modify(*it, [&](construction_capital_object& obj) {
+            if (op.reason == 0) {
+                obj.next_slot += obj.period;
+            } else {
+                obj.pending -= 1;
+            }
+            obj.achieved += 1;
+            //adjust balance
+            db().adjust_balance(obj.owner, asset(op.amount, asset_id_type(0)));
+        });
+        //if release of this construction capital is done, 
+        //release the locked shares and remove this object
+        if (it->achieved >= it->total_periods) {
+            db().adjust_balance(it->owner, asset(it->amount, asset_id_type(0)));
+            db().remove(*it);
+        }        
+
+        wlog("incentive_evaluator::do_apply: ${obj}", ("obj", *it));
         return void_result();
     }
-
-//    void incentive_evaluator::pay_fee() {
-//
-//    }
-
 }} // graphene::chain

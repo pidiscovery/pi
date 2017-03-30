@@ -24,6 +24,8 @@
 
 #include <graphene/chain/protocol/authority.hpp>
 #include <graphene/app/impacted.hpp>
+#include <graphene/chain/construction_capital_object.hpp>
+#include <graphene/db/generic_index.hpp>
 
 namespace graphene { namespace app {
 
@@ -34,7 +36,8 @@ using namespace graphene::chain;
 struct get_impacted_account_visitor
 {
    flat_set<account_id_type>& _impacted;
-   get_impacted_account_visitor( flat_set<account_id_type>& impact ):_impacted(impact) {}
+   graphene::chain::database *_db;
+   get_impacted_account_visitor( flat_set<account_id_type>& impact, graphene::chain::database *db =nullptr ):_impacted(impact), _db(db) {}
    typedef void result_type;
 
    void operator()( const transfer_operation& op )
@@ -203,22 +206,49 @@ struct get_impacted_account_visitor
       _impacted.insert( op.account_id );
    }
 
-   void operator()( const incentive_operation& op ) {
+   void operator()( const incentive_operation& op ) 
+   {
+      if (_db) {
+         auto& index = _db->get_index_type<construction_capital_index>().indices().get<by_id>();
+         auto it = index.find(op.ccid);
+         if (it != index.end()) {
+            _impacted.insert( it->owner );
+         }
+      }
+   }
+   
+   void operator()( const construction_capital_create_operation& op ) 
+   {
         _impacted.insert( op.account_id );
    }
 
+   void operator()( const construction_capital_vote_operation& op ) 
+   {
+      _impacted.insert( op.account_id );
+      if (_db) {
+         auto& index = _db->get_index_type<construction_capital_vote_index>().indices().get<by_vote_to>();
+         auto it = index.find(op.cc_to);
+         if (it != index.end()) {
+            auto& index_cc = _db->get_index_type<construction_capital_index>().indices().get<by_id>();
+            auto it_cc = index_cc.find(it->cc_to);
+            if (it_cc != index_cc.end()) {
+               _impacted.insert(it_cc->owner);
+            }
+         }
+      }
+   }
 };
 
-void operation_get_impacted_accounts( const operation& op, flat_set<account_id_type>& result )
+void operation_get_impacted_accounts( const operation& op, flat_set<account_id_type>& result, graphene::chain::database* db )
 {
-   get_impacted_account_visitor vtor = get_impacted_account_visitor( result );
+   get_impacted_account_visitor vtor = get_impacted_account_visitor( result, db );
    op.visit( vtor );
 }
 
-void transaction_get_impacted_accounts( const transaction& tx, flat_set<account_id_type>& result )
+void transaction_get_impacted_accounts( const transaction& tx, flat_set<account_id_type>& result, graphene::chain::database* db)
 {
    for( const auto& op : tx.operations )
-      operation_get_impacted_accounts( op, result );
+      operation_get_impacted_accounts( op, result, db );
 }
 
 } }

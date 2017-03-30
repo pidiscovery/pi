@@ -26,6 +26,7 @@
 
 #include <graphene/chain/evaluator.hpp>
 #include <graphene/chain/protocol/types.hpp>
+#include <graphene/chain/database.hpp>
 
 namespace graphene { namespace chain {
     class incentive_evaluator : public evaluator<incentive_evaluator> {

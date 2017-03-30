@@ -380,8 +380,8 @@ namespace graphene { namespace chain {
 
 
          //////////////////// db_incentive.cpp ////////////////////
-         bool generate_incentive_transaction(signed_transaction& tx);
-         void apply_incentive(const processed_transaction &tx);
+         signed_transaction generate_incentive_transaction();
+         processed_transaction apply_incentive(const processed_transaction &tx);
 
          ///@}
          /**

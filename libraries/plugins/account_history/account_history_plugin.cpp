@@ -101,7 +101,7 @@ void account_history_plugin_impl::update_account_histories( const signed_block& 
       if( op.op.which() == operation::tag< account_create_operation >::value )
          impacted.insert( oho.result.get<object_id_type>() );
       else
-         graphene::app::operation_get_impacted_accounts( op.op, impacted );
+         graphene::app::operation_get_impacted_accounts( op.op, impacted, &db );
 
       for( auto& a : other )
          for( auto& item : a.account_auths )

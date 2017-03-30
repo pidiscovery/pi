@@ -23,39 +23,24 @@
  */
 
 #pragma once
-
-#include <graphene/chain/protocol/base.hpp>
-#include <graphene/chain/protocol/types.hpp>
+#include <graphene/chain/evaluator.hpp>
+#include <graphene/chain/protocol/construction_capital.hpp>
+#include <graphene/chain/construction_capital_object.hpp>
 
 namespace graphene { namespace chain {
-   /**
-    * @ingroup operations
-    * @brief Generate an incentive
-    *
-    * This operation is used to generate an incentive
-    * for a specified construction capital for an account
-    */    
-    struct incentive_operation : public base_operation {
-        struct fee_parameters_type {uint64_t fee = 0; };
-        
-        incentive_operation() {}
 
-        share_type amount;
-        asset fee;
-        construction_capital_id_type ccid;
-        uint8_t reason;
-
-        account_id_type fee_payer() const {
-            return GRAPHENE_TEMP_ACCOUNT;
-        }
-
-        void validate() const;
-
-        /// This is a virtual operation; there is no fee
-        share_type      calculate_fee(const fee_parameters_type& k)const { return 0; }
+    class construction_capital_create_evaluator : public evaluator<construction_capital_create_evaluator> {
+    public:
+        typedef construction_capital_create_operation operation_type;
+        void_result do_evaluate( const construction_capital_create_operation& o );
+        object_id_type do_apply( const construction_capital_create_operation& o );
     };
-}} // graphene::chain
 
-FC_REFLECT( graphene::chain::incentive_operation::fee_parameters_type, (fee) )
+    class construction_capital_vote_evaluator : public evaluator<construction_capital_vote_evaluator> {
+    public:
+        typedef construction_capital_vote_operation operation_type;
 
-FC_REFLECT( graphene::chain::incentive_operation, (amount)(fee)(ccid)(reason) )
+        void_result do_evaluate( const construction_capital_vote_operation& o );
+        void_result do_apply( const construction_capital_vote_operation& o );
+    }; 
+} } // graphene::chain

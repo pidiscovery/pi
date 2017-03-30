@@ -346,25 +346,27 @@ signed_block database::_generate_block(
    _pending_tx_session.reset();
    _pending_tx_session = _undo_db.start_undo_session();
        
-   uint64_t postponed_tx_count = 0;
+   
 
    processed_transaction inc_tx;
    try {
-      generate_incentive_transaction(inc_tx);
-      auto temp_session = _undo_db.start_undo_session();
-      apply_incentive(inc_tx);
-      temp_session.merge();
+      processed_transaction inc_tx = generate_incentive_transaction();
+      if (inc_tx.operations.size() > 0) {
+         auto temp_session = _undo_db.start_undo_session();
+         processed_transaction ptx = apply_incentive(inc_tx);
+         temp_session.merge();
 
-      total_block_size += fc::raw::pack_size(inc_tx);
-      pending_block.transactions.push_back(inc_tx);
+         total_block_size += fc::raw::pack_size(ptx);
+         pending_block.transactions.push_back(ptx);
+      }
 
    } catch (const fc::exception &e) {
          wlog( "Transaction was not processed while generating block due to ${e}", ("e", e) );
          wlog( "The transaction was ${t}", ("t", inc_tx) );
    }
 
-  //  
 
+   uint64_t postponed_tx_count = 0;
    // pop pending state (reset to head block state)
    for( const processed_transaction& tx : _pending_tx )
    {

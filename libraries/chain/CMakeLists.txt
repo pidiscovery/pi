@@ -59,6 +59,7 @@ add_library( graphene_chain
              protocol/confidential.cpp
              protocol/vote.cpp
              protocol/incentive.cpp
+             protocol/construction_capital.cpp
 
              genesis_state.cpp
              get_config.cpp
@@ -82,6 +83,7 @@ add_library( graphene_chain
              special_authority.cpp
              buyback.cpp
              incentive_evaluator.cpp
+             construction_capital_evaluator.cpp
 
              account_object.cpp
              asset_object.cpp

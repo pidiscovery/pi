@@ -123,6 +123,8 @@ public:
    std::string operator()(const account_create_operation& op)const;
    std::string operator()(const account_update_operation& op)const;
    std::string operator()(const asset_create_operation& op)const;
+   std::string operator()(const incentive_operation& op)const;
+   std::string operator()(const construction_capital_create_operation& op)const;
 };
 
 template<class T>
@@ -1821,6 +1823,48 @@ public:
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (account_to_modify)(desired_number_of_witnesses)(desired_number_of_committee_members)(broadcast) ) }
 
+   signed_transaction create_construction_capital(string account, 
+                                                string amount, 
+                                                uint32_t period, 
+                                                uint16_t total_periods, 
+                                                bool broadcast)
+   { try {
+      account_object owner_account = get_account(account);
+      fc::ecc::private_key active_private_key = get_private_key_for_account(owner_account);
+      construction_capital_create_operation op;
+      op.account_id = owner_account.id;
+      op.amount = std::stoull(amount);
+      op.period = period;
+      op.total_periods = total_periods;
+
+      signed_transaction tx;
+      tx.operations.push_back( op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      tx.validate();
+      
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (account)(amount)(period)(total_periods)(broadcast) ) }
+
+   signed_transaction vote_for_construction_capital(string account, 
+                                                uint32_t cc_from, 
+                                                uint32_t cc_to, 
+                                                bool broadcast)
+   { try {
+       account_object owner_account = get_account(account);
+       fc::ecc::private_key active_private_key = get_private_key_for_account(owner_account);
+       construction_capital_vote_operation op;
+       op.account_id = owner_account.id;
+       op.cc_from = construction_capital_id_type(cc_from);
+       op.cc_to = construction_capital_id_type(cc_to);
+       
+       signed_transaction tx;
+       tx.operations.push_back( op );
+       set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+       tx.validate();
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (account)(cc_from)(cc_to)(broadcast) ) }
+
+
    signed_transaction sign_transaction(signed_transaction tx, bool broadcast = false)
    {
       flat_set<account_id_type> req_active_approvals;
@@ -2728,6 +2772,28 @@ std::string operation_printer::operator()(const asset_create_operation& op) cons
    out << "'" << op.symbol << "' with issuer " << wallet.get_account(op.issuer).name;
    return fee(op.fee);
 }
+    
+std::string operation_printer::operator()(const incentive_operation& op) const
+{
+   out << "Incentive for "
+      << " cc_id:" << string(object_id_type(op.ccid))
+      << " amount:" << op.amount.value;
+   if (op.reason == 0) {
+      out << " reason:period";
+   } else {
+      out << " reason:vote";
+   }
+   return fee(op.fee);
+}
+
+std::string operation_printer::operator()(const construction_capital_create_operation& op) const
+{
+   out << "Construction Capital created for " << wallet.get_account(op.account_id).name
+      << " amount:" << op.amount.value
+      << " period:" << op.period
+      << " total_periods:" << op.total_periods;
+   return fee(op.fee);
+}
 
 std::string operation_result_printer::operator()(const void_result& x) const
 {
@@ -3391,6 +3457,17 @@ signed_transaction wallet_api::set_desired_witness_and_committee_member_count(st
    return my->set_desired_witness_and_committee_member_count(account_to_modify, desired_number_of_witnesses,
                                                      desired_number_of_committee_members, broadcast);
 }
+
+signed_transaction wallet_api::create_construction_capital(string account, string amount, uint32_t period, uint16_t total_periods, bool broadcast) 
+{
+   return my->create_construction_capital(account, amount, period, total_periods, broadcast);
+}
+
+signed_transaction wallet_api::vote_for_construction_capital(string account, uint32_t cc_from, uint32_t cc_to, bool broadcast) 
+{
+   return my->vote_for_construction_capital(account, cc_from, cc_to, broadcast);
+}
+
 
 void wallet_api::set_wallet_filename(string wallet_filename)
 {

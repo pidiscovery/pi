@@ -27,16 +27,20 @@
 #include <graphene/chain/protocol/operations.hpp>
 #include <graphene/chain/protocol/transaction.hpp>
 #include <graphene/chain/protocol/types.hpp>
+#include <graphene/chain/database.hpp>
 
 namespace graphene { namespace app {
 
 void operation_get_impacted_accounts(
    const graphene::chain::operation& op,
-   fc::flat_set<graphene::chain::account_id_type>& result );
+   fc::flat_set<graphene::chain::account_id_type>& result,
+   graphene::chain::database *db = nullptr
+);
 
 void transaction_get_impacted_accounts(
    const graphene::chain::transaction& tx,
-   fc::flat_set<graphene::chain::account_id_type>& result
-   );
+   fc::flat_set<graphene::chain::account_id_type>& result,
+   graphene::chain::database *db = nullptr
+);
 
 } } // graphene::app
