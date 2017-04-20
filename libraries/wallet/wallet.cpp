@@ -1864,7 +1864,6 @@ public:
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (account)(cc_from)(cc_to)(broadcast) ) }
 
-
    signed_transaction sign_transaction(signed_transaction tx, bool broadcast = false)
    {
       flat_set<account_id_type> req_active_approvals;
@@ -3468,6 +3467,28 @@ signed_transaction wallet_api::vote_for_construction_capital(string account, uin
    return my->vote_for_construction_capital(account, cc_from, cc_to, broadcast);
 }
 
+construction_capital_object wallet_api::get_construction_capital(construction_capital_id_type id) 
+{
+    fc::optional<construction_capital_object> cc = my->_remote_db->get_construction_capital(id);
+    if (cc) {
+        return *cc;
+    } else {
+        FC_THROW("No construction capital with id- ${id}", ("id", id));
+    }
+}
+
+vector<construction_capital_object> wallet_api::get_account_construction_capital( const string& id ) 
+{
+    if( auto real_id = detail::maybe_id<account_id_type>(id) ) {
+        return my->_remote_db->get_account_construction_capital(*real_id);
+    }
+    return my->_remote_db->get_account_construction_capital(get_account(id).id);
+}
+
+vector<construction_capital_vote_object> wallet_api::get_construction_capital_vote( construction_capital_id_type id )
+{
+    return my->_remote_db->get_construction_capital_vote(id);
+}
 
 void wallet_api::set_wallet_filename(string wallet_filename)
 {

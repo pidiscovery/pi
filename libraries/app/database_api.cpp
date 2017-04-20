@@ -139,6 +139,11 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       // Blinded balances
       vector<blinded_balance_object> get_blinded_balances( const flat_set<commitment_type>& commitments )const;
+      
+      // Incentive & Construction Capital
+      vector<construction_capital_object> get_account_construction_capital( account_id_type id )const;
+      fc::optional<construction_capital_object> get_construction_capital( construction_capital_id_type id )const;
+      vector<construction_capital_vote_object> get_construction_capital_vote( construction_capital_id_type id )const;
 
    //private:
       template<typename T>
@@ -1792,6 +1797,63 @@ vector<blinded_balance_object> database_api_impl::get_blinded_balances( const fl
          result.push_back( *itr );
    }
    return result;
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//                                                                  //
+// Incentive & Construction Capital                                 //
+//                                                                  //
+//////////////////////////////////////////////////////////////////////
+
+vector<construction_capital_object> database_api::get_account_construction_capital( account_id_type id )const 
+{
+    return my->get_account_construction_capital(id);
+}
+
+vector<construction_capital_object> database_api_impl::get_account_construction_capital( account_id_type id )const 
+{
+    vector<construction_capital_object> result;
+    const auto& idx = _db.get_index_type<construction_capital_index>().indices().get<by_account>();
+    for (auto it = idx.begin(); it != idx.end(); ++it) {
+        result.push_back(*it);
+    }
+    return result;
+}
+
+fc::optional<construction_capital_object> database_api::get_construction_capital( construction_capital_id_type id )const
+{
+    return my->get_construction_capital(id);
+}
+
+fc::optional<construction_capital_object> database_api_impl::get_construction_capital( construction_capital_id_type id )const
+{
+    const auto& idx = _db.get_index_type<construction_capital_index>().indices().get<by_id>();
+    auto it = idx.find(id);
+    if (it != idx.end()) {
+        return *it;
+    }
+    return {};
+}
+
+vector<construction_capital_vote_object> database_api::get_construction_capital_vote( construction_capital_id_type id )const
+{
+    return my->get_construction_capital_vote(id);
+}
+
+vector<construction_capital_vote_object> database_api_impl::get_construction_capital_vote( construction_capital_id_type id )const
+{
+    vector<construction_capital_vote_object> result;
+    const auto& idx_from = _db.get_index_type<construction_capital_vote_index>().indices().get<by_vote_from>();
+    for (auto it = idx_from.begin(); it != idx_from.end(); ++it) {
+        result.push_back(*it);
+    }
+    const auto& idx_to = _db.get_index_type<construction_capital_vote_index>().indices().get<by_vote_to>();
+    for (auto it = idx_to.begin(); it != idx_to.end(); ++it) {
+        result.push_back(*it);
+    }
+    
+    return result;
 }
 
 //////////////////////////////////////////////////////////////////////

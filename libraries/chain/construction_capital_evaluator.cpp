@@ -26,7 +26,9 @@
 #include <graphene/chain/database.hpp>
 #include <graphene/chain/protocol/asset.hpp>
 #include <graphene/chain/exceptions.hpp>
+#include <fc/real128.hpp>
 
+using namespace fc;
 
 namespace graphene { namespace chain {
     void_result construction_capital_create_evaluator::do_evaluate( const construction_capital_create_operation& op ) {
@@ -47,6 +49,7 @@ namespace graphene { namespace chain {
 
     object_id_type construction_capital_create_evaluator::do_apply( const construction_capital_create_operation& op ) {
         try {
+            wlog("cc create: ${cc_op}", ("cc_op", op));
             db().adjust_balance(op.account_id, -asset(op.amount, asset_id_type(0)));
             const auto& new_cc_object = db().create<construction_capital_object>( [&]( construction_capital_object& obj ){
                 obj.owner = op.account_id;
@@ -54,6 +57,7 @@ namespace graphene { namespace chain {
                 obj.period = op.period;
                 obj.total_periods = op.total_periods;
                 obj.achieved = 0;
+                obj.pending = 0;
                 obj.next_slot = fc::time_point_sec(db().head_block_time() + op.period);
             });
             return new_cc_object.id;
@@ -116,6 +120,7 @@ namespace graphene { namespace chain {
 
     void_result construction_capital_vote_evaluator::do_apply( const construction_capital_vote_operation& op ) {
         try {
+            wlog("cc vote: ${ccv_op}", ("ccv_op", op));
             //modify destination construction capital object
             const auto& index = db().get_index_type<construction_capital_index>().indices().get<by_id>();
             const auto& cc_to = index.find(op.cc_to);
@@ -128,7 +133,8 @@ namespace graphene { namespace chain {
                 auto from_obj_it = index.find(it->cc_from);
                 accelerate_got += from_obj_it->amount * from_obj_it->period * from_obj_it->total_periods;
             }
-            share_type max_acclerate = accelerate_period_amount.value * cc_to->total_periods * GRAPHENE_DEFAULT_MAX_INCENTIVE_ACCELERATE_RATE * 0.01;
+            real128 max_acclerate_real = real128(accelerate_period_amount.value) * real128(cc_to->total_periods * GRAPHENE_DEFAULT_MAX_INCENTIVE_ACCELERATE_RATE) / real128(100);
+            share_type max_acclerate = max_acclerate_real.to_uint64(); 
             //accelerate has an upper limit, when reached, no accelerate effect take palce
             if (accelerate_got < max_acclerate) {
                 //calculate incentive accelerate
@@ -138,7 +144,8 @@ namespace graphene { namespace chain {
                     accelerate_amount = max_acclerate - accelerate_got;
                 }
                 //total accelerate time
-                uint32_t total_accl = accelerate_amount.value / (double)accelerate_period_amount.value * cc_to->period;
+                real128 total_accl_real = real128(accelerate_amount.value) / real128(accelerate_period_amount.value) * real128(cc_to->period);
+                uint32_t total_accl = total_accl_real.to_uint64();
                 db().modify(*cc_to, [&](construction_capital_object &obj) {
                     fc::microseconds accl_left(total_accl * 1000000);
                     //calculate periods of incentive release accelerated by this vote

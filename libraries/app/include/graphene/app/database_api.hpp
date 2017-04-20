@@ -40,6 +40,7 @@
 #include <graphene/chain/proposal_object.hpp>
 #include <graphene/chain/worker_object.hpp>
 #include <graphene/chain/witness_object.hpp>
+#include <graphene/chain/construction_capital_object.hpp>
 
 #include <graphene/market_history/market_history_plugin.hpp>
 
@@ -564,6 +565,20 @@ class database_api
        */
       vector<blinded_balance_object> get_blinded_balances( const flat_set<commitment_type>& commitments )const;
 
+      //////////////////////////////////////
+      // Incentive & Construction Capital //
+      //////////////////////////////////////
+
+      /**
+       * @brief Get construction capital created by a specified account
+       * @param id ID of the account to get construction capital for      
+       *  @return the set of blinded balance objects by commitment ID
+       */
+      vector<construction_capital_object> get_account_construction_capital( account_id_type id )const;
+      fc::optional<construction_capital_object> get_construction_capital( construction_capital_id_type id )const;
+      vector<construction_capital_vote_object> get_construction_capital_vote( construction_capital_id_type id )const;
+
+
    private:
       std::shared_ptr< database_api_impl > my;
 };
@@ -667,4 +682,9 @@ FC_API(graphene::app::database_api,
 
    // Blinded balances
    (get_blinded_balances)
+
+   //Incentive & Construction Capital
+   (get_account_construction_capital)
+   (get_construction_capital)
+   (get_construction_capital_vote)
 )

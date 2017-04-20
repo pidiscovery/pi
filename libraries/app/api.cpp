@@ -338,6 +338,10 @@ namespace graphene { namespace app {
             } case balance_object_type:{
                /** these are free from any accounts */
                break;
+            } case construction_capital_object_type:{
+               break;
+            } case construction_capital_vote_object_type:{
+               break;
             }
           }
        }

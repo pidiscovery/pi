@@ -25,12 +25,60 @@
 #include <graphene/chain/incentive_evaluator.hpp>
 #include <graphene/chain/protocol/construction_capital.hpp>
 #include <graphene/chain/construction_capital_object.hpp>
+#include <fc/real128.hpp>
+
+using namespace fc;
 
 namespace graphene { namespace chain {
 
     void_result incentive_evaluator::do_evaluate( const incentive_operation& op ) {
-        return void_result();
-    }
+        try {
+            auto& index = db().get_index_type<construction_capital_index>().indices().get<by_id>();
+            auto it = index.find(op.ccid);
+            //construction capital must exist
+            FC_ASSERT(
+                it != index.end(),
+                "construction capital ${cc} not found",
+                ("cc", op.ccid)
+            );
+            const auto& gpo = db().get_global_properties();
+            real128 amount = real128(it->amount.value)
+                * real128(it->period) / real128(GRAPHENE_SECONDS_PER_YEAR) 
+                * real128(gpo.parameters.issuance_rate) / real128(GRAPHENE_ISSUANCE_RATE_SCALE);
+            //check if incentive amount is valid
+            FC_ASSERT(
+                amount.to_uint64() == op.amount,
+                "incentive amount invalid, should be ${should}, got ${got}",
+                ("should", amount.to_uint64())
+                ("got", op.amount)
+            );            
+            //check if has unreleased incentive period(s)
+            FC_ASSERT(
+                it->achieved < it->total_periods,
+                "all periods are released already, total_periods- ${total}, achived- ${achived}",
+                ("total", it->total_periods)
+                ("achived", it->achieved)
+            );
+            if (op.reason == 0) {
+                //incentive by period
+                //should reach it's time slot
+                FC_ASSERT(
+                    it->next_slot <= db().head_block_time(),
+                    "incentive by period should reach the time slot, should be smaller than ${should}, got ${got}",
+                    ("should", it->next_slot)
+                    ("got", db().head_block_time())
+                );
+            } else if (op.reason == 1) {
+                //incentive by vote
+                //should have unreleased pending incentive by vote
+                FC_ASSERT(
+                    it->pending >= 1,
+                    "only construction capital has pending can be incentive by vote, pending - ${pending}",
+                    ("pending", it->pending)
+                );                
+            }
+            return void_result();
+    } FC_CAPTURE_AND_RETHROW((op)) }
 
     void_result incentive_evaluator::do_apply( const incentive_operation& op ) {
         //modify construction capital
@@ -47,14 +95,14 @@ namespace graphene { namespace chain {
             //adjust balance
             db().adjust_balance(obj.owner, asset(op.amount, asset_id_type(0)));
         });
+        wlog("incentive run, cc: ${cc}", ("cc", *it));
         //if release of this construction capital is done, 
         //release the locked shares and remove this object
         if (it->achieved >= it->total_periods) {
+            wlog("incentive done, cc: ${cc}", ("cc", *it));
             db().adjust_balance(it->owner, asset(it->amount, asset_id_type(0)));
             db().remove(*it);
         }        
-
-        wlog("incentive_evaluator::do_apply: ${obj}", ("obj", *it));
         return void_result();
     }
 }} // graphene::chain

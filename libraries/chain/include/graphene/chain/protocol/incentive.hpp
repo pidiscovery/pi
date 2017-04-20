@@ -40,10 +40,10 @@ namespace graphene { namespace chain {
         
         incentive_operation() {}
 
-        share_type amount;
-        asset fee;
-        construction_capital_id_type ccid;
-        uint8_t reason;
+        share_type amount;                  //core shares get by this incentive
+        asset fee;                          //this is virtual operation, no fee is charged
+        construction_capital_id_type ccid;  //construction capital of this incentive
+        uint8_t reason;                     //incentive reason: 0-by period; 1-by vote
 
         account_id_type fee_payer() const {
             return GRAPHENE_TEMP_ACCOUNT;

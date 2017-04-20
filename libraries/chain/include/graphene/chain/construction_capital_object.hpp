@@ -23,7 +23,7 @@
  */
 #pragma once
 
-#include <graphene/chain/protocol/operations.hpp>
+#include <graphene/chain/protocol/types.hpp>
 #include <graphene/db/generic_index.hpp>
 #include <boost/multi_index/composite_key.hpp>
 
@@ -105,8 +105,8 @@ namespace graphene { namespace chain {
     */
     class construction_capital_vote_object : public graphene::db::abstract_object<construction_capital_vote_object> {
     public:
-        static const uint8_t space_id = implementation_ids;
-        static const uint8_t type_id  = impl_construction_capital_vote_object_type;
+        static const uint8_t space_id = protocol_ids;
+        static const uint8_t type_id  = construction_capital_vote_object_type;
         construction_capital_id_type cc_from;
         construction_capital_id_type cc_to;
     };

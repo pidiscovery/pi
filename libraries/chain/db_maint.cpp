@@ -113,6 +113,51 @@ void database::update_worker_votes()
    }
 }
 
+uint32_t database::get_issuance_rate_by_vote(){
+    return 52142857;
+}
+
+void database::update_issuance_rate()
+{
+    //until 2019-12-01, issuance rate is set by this table
+    //after 2019-12-01, issuance rate will be set by vote result
+    vector< pair<string, uint32_t> > rate_table = {
+        make_pair<string, uint32_t>("20170301T000000", 104285714),
+        make_pair<string, uint32_t>("20170601T000000", 99071428),
+        make_pair<string, uint32_t>("20170901T000000", 93857142),
+        make_pair<string, uint32_t>("20171201T000000", 88642857),
+        make_pair<string, uint32_t>("20180301T000000", 83428571),
+        make_pair<string, uint32_t>("20180601T000000", 78214285),
+        make_pair<string, uint32_t>("20180901T000000", 73000000),
+        make_pair<string, uint32_t>("20181201T000000", 67785714),
+        make_pair<string, uint32_t>("20190301T000000", 62571428),
+        make_pair<string, uint32_t>("20190601T000000", 57357142),
+        make_pair<string, uint32_t>("20190901T000000", 52142857)
+    };
+
+    uint32_t issuance_rate = 104285714;
+    time_point now = time_point(head_block_time());
+    if (now >= time_point::from_iso_string("20191201T000000")) {
+        //after 2019-12-01 issuance rate is set by vote
+        issuance_rate = get_issuance_rate_by_vote();
+    } else {
+        //before 2019-12-01 issuance rate is set by default table
+        for (auto it : rate_table) {
+            if (now >= time_point::from_iso_string(it.first)) {
+                issuance_rate = it.second;
+                break;
+            }
+        }
+    }
+    //update issuance_rate
+    const auto& gpo = get_global_properties();
+    if (gpo.parameters.issuance_rate != issuance_rate) {
+        modify(gpo, [&](global_property_object& p) {
+            p.parameters.issuance_rate = issuance_rate;
+        });        
+    }
+}
+
 void database::pay_workers( share_type& budget )
 {
 //   ilog("Processing payroll! Available budget is ${b}", ("b", budget));
@@ -818,6 +863,7 @@ void database::perform_chain_maintenance(const signed_block& next_block, const g
    update_active_witnesses();
    update_active_committee_members();
    update_worker_votes();
+   update_issuance_rate();
 
    modify(gpo, [this](global_property_object& p) {
       // Remove scaling of account registration fee

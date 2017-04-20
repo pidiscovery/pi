@@ -452,6 +452,8 @@ namespace graphene { namespace chain {
          void update_active_witnesses();
          void update_active_committee_members();
          void update_worker_votes();
+         uint32_t get_issuance_rate_by_vote();
+         void update_issuance_rate();
 
          template<class... Types>
          void perform_account_maintenance(std::tuple<Types...> helpers);

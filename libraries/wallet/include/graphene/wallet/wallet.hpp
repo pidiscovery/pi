@@ -775,6 +775,7 @@ class wallet_api
                                                     uint32_t period, 
                                                     uint16_t total_periods, 
                                                     bool broadcast = false);
+
       /** Use one's own construction capital to accelerate other's incentive release speed.
        * @param account the name or id of the account who is voting
        * @param cc_from construction capital id of who is voting
@@ -785,6 +786,20 @@ class wallet_api
                                                     uint32_t cc_from_id, 
                                                     uint32_t cc_to_id, 
                                                     bool broadcast = false);
+      /** get construction capital by id
+       * @param id construction capital id
+       */
+      construction_capital_object get_construction_capital(construction_capital_id_type id);
+
+      /** get construction capital by account
+       * @param id account id or name
+       */
+      vector<construction_capital_object> get_account_construction_capital( const string& id );
+
+      /** get construction capital vote by construction capital id
+       * @param id construction capital id
+       */
+      vector<construction_capital_vote_object> get_construction_capital_vote( construction_capital_id_type id );
 
       /**
        *  This method is used to convert a JSON transaction to its transactin ID.
@@ -1649,6 +1664,9 @@ FC_API( graphene::wallet::wallet_api,
         (transfer2)
         (create_construction_capital)
         (vote_for_construction_capital)
+        (get_construction_capital)
+        (get_account_construction_capital)
+        (get_construction_capital_vote)
         (get_transaction_id)
         (create_asset)
         (update_asset)
