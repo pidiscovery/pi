@@ -1815,7 +1815,8 @@ vector<construction_capital_object> database_api_impl::get_account_construction_
 {
     vector<construction_capital_object> result;
     const auto& idx = _db.get_index_type<construction_capital_index>().indices().get<by_account>();
-    for (auto it = idx.begin(); it != idx.end(); ++it) {
+    
+    for (auto it = idx.lower_bound(id); it != idx.upper_bound(id); ++it) {
         result.push_back(*it);
     }
     return result;
@@ -1845,11 +1846,11 @@ vector<construction_capital_vote_object> database_api_impl::get_construction_cap
 {
     vector<construction_capital_vote_object> result;
     const auto& idx_from = _db.get_index_type<construction_capital_vote_index>().indices().get<by_vote_from>();
-    for (auto it = idx_from.begin(); it != idx_from.end(); ++it) {
+    for (auto it = idx_from.lower_bound(id); it != idx_from.upper_bound(id); ++it) {
         result.push_back(*it);
     }
     const auto& idx_to = _db.get_index_type<construction_capital_vote_index>().indices().get<by_vote_to>();
-    for (auto it = idx_to.begin(); it != idx_to.end(); ++it) {
+    for (auto it = idx_to.lower_bound(id); it != idx_to.upper_bound(id); ++it) {
         result.push_back(*it);
     }
     

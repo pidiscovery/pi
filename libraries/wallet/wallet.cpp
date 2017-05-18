@@ -1846,16 +1846,16 @@ public:
    } FC_CAPTURE_AND_RETHROW( (account)(amount)(period)(total_periods)(broadcast) ) }
 
    signed_transaction vote_for_construction_capital(string account, 
-                                                uint32_t cc_from, 
-                                                uint32_t cc_to, 
+                                                construction_capital_id_type cc_from,
+                                                construction_capital_id_type cc_to,
                                                 bool broadcast)
    { try {
        account_object owner_account = get_account(account);
        fc::ecc::private_key active_private_key = get_private_key_for_account(owner_account);
        construction_capital_vote_operation op;
        op.account_id = owner_account.id;
-       op.cc_from = construction_capital_id_type(cc_from);
-       op.cc_to = construction_capital_id_type(cc_to);
+       op.cc_from = cc_from;
+       op.cc_to = cc_to;
        
        signed_transaction tx;
        tx.operations.push_back( op );
@@ -3462,32 +3462,58 @@ signed_transaction wallet_api::create_construction_capital(string account, strin
    return my->create_construction_capital(account, amount, period, total_periods, broadcast);
 }
 
-signed_transaction wallet_api::vote_for_construction_capital(string account, uint32_t cc_from, uint32_t cc_to, bool broadcast) 
+signed_transaction wallet_api::vote_for_construction_capital(string account, const string& cc_from, const string& cc_to, bool broadcast) 
 {
-   return my->vote_for_construction_capital(account, cc_from, cc_to, broadcast);
+    auto from_id = detail::maybe_id<construction_capital_id_type>(cc_from);
+    auto to_id = detail::maybe_id<construction_capital_id_type>(cc_to);
+    if (from_id && to_id) 
+    {
+        return my->vote_for_construction_capital(account, *from_id, *to_id, broadcast);
+    }
+    else
+    {
+        FC_THROW("Invalide construction capital id - ${cc_from} | ${cc_to}", ("cc_from", cc_from)("cc_to", cc_to));
+    }
 }
 
-construction_capital_object wallet_api::get_construction_capital(construction_capital_id_type id) 
+construction_capital_object wallet_api::get_construction_capital(const string& id_str) 
 {
-    fc::optional<construction_capital_object> cc = my->_remote_db->get_construction_capital(id);
-    if (cc) {
-        return *cc;
-    } else {
-        FC_THROW("No construction capital with id- ${id}", ("id", id));
+    if ( auto id = detail::maybe_id<construction_capital_id_type>(id_str) )
+    {
+        if (auto cc = my->_remote_db->get_construction_capital(*id))
+        {
+            return *cc;
+        }
+        else
+        {
+            FC_THROW("No construction capital with id- ${id}", ("id", id_str));
+        }
+    }
+    else 
+    {
+        FC_THROW("Invalide construction capital id- ${id}", ("id", id_str));
     }
 }
 
 vector<construction_capital_object> wallet_api::get_account_construction_capital( const string& id ) 
 {
-    if( auto real_id = detail::maybe_id<account_id_type>(id) ) {
+    if( auto real_id = detail::maybe_id<account_id_type>(id) ) 
+    {
         return my->_remote_db->get_account_construction_capital(*real_id);
     }
     return my->_remote_db->get_account_construction_capital(get_account(id).id);
 }
 
-vector<construction_capital_vote_object> wallet_api::get_construction_capital_vote( construction_capital_id_type id )
+vector<construction_capital_vote_object> wallet_api::get_construction_capital_vote( const string& id_str )
 {
-    return my->_remote_db->get_construction_capital_vote(id);
+    if ( auto id = detail::maybe_id<construction_capital_id_type>(id_str) )
+    {
+        return my->_remote_db->get_construction_capital_vote(*id);
+    }
+    else 
+    {
+        FC_THROW("No construction capital with id- ${id}", ("id", id_str));
+    }
 }
 
 void wallet_api::set_wallet_filename(string wallet_filename)

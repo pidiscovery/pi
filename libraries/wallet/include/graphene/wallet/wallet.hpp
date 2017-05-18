@@ -770,11 +770,12 @@ class wallet_api
        * @param total_periods total release periods
        * @param broadcast true to broadcast the transaction on the network
        */
-      signed_transaction create_construction_capital(string account, 
+      signed_transaction create_construction_capital( string account, 
                                                     string amount, 
                                                     uint32_t period, 
                                                     uint16_t total_periods, 
-                                                    bool broadcast = false);
+                                                    bool broadcast = false
+                                                );
 
       /** Use one's own construction capital to accelerate other's incentive release speed.
        * @param account the name or id of the account who is voting
@@ -782,14 +783,15 @@ class wallet_api
        * @param cc_to_id construction capital id of who is voted for
        * @param broadcast true to broadcast the transaction on the network
        */
-      signed_transaction vote_for_construction_capital(string account, 
-                                                    uint32_t cc_from_id, 
-                                                    uint32_t cc_to_id, 
-                                                    bool broadcast = false);
+      signed_transaction vote_for_construction_capital( string account, 
+                                                    const string& cc_from_id, 
+                                                    const string& cc_to_id, 
+                                                    bool broadcast = false
+                                            );
       /** get construction capital by id
        * @param id construction capital id
        */
-      construction_capital_object get_construction_capital(construction_capital_id_type id);
+      construction_capital_object get_construction_capital( const string& id );
 
       /** get construction capital by account
        * @param id account id or name
@@ -799,7 +801,7 @@ class wallet_api
       /** get construction capital vote by construction capital id
        * @param id construction capital id
        */
-      vector<construction_capital_vote_object> get_construction_capital_vote( construction_capital_id_type id );
+      vector<construction_capital_vote_object> get_construction_capital_vote( const string& id );
 
       /**
        *  This method is used to convert a JSON transaction to its transactin ID.

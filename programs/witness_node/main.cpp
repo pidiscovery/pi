@@ -112,7 +112,8 @@ int main(int argc, char** argv) {
          // try to get logging options from the config file.
          try
          {
-            fc::optional<fc::logging_config> logging_config = load_logging_config_from_ini_file(config_ini_path);
+            fc::path logging_ini_path = data_dir / "logging.ini";
+            fc::optional<fc::logging_config> logging_config = load_logging_config_from_ini_file(logging_ini_path);
             if (logging_config)
                fc::configure_logging(*logging_config);
          }
