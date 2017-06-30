@@ -75,9 +75,9 @@ namespace graphene { namespace chain {
 
       struct fee_parameters_type
       {
-         uint64_t basic_fee      = 5*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
-         uint64_t premium_fee    = 2000*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
-         uint32_t price_per_kbyte = GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t basic_fee      = 0.05*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
+         uint64_t premium_fee    = 20*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
+         uint32_t price_per_kbyte = 0.01 * GRAPHENE_BLOCKCHAIN_PRECISION;
       };
 
       asset           fee;
@@ -128,8 +128,8 @@ namespace graphene { namespace chain {
 
       struct fee_parameters_type
       {
-         share_type fee             = 20 * GRAPHENE_BLOCKCHAIN_PRECISION;
-         uint32_t   price_per_kbyte = GRAPHENE_BLOCKCHAIN_PRECISION;
+         share_type fee             = 0.02 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint32_t   price_per_kbyte = 0.01 * GRAPHENE_BLOCKCHAIN_PRECISION;
       };
 
       asset fee;
@@ -219,8 +219,8 @@ namespace graphene { namespace chain {
    struct account_upgrade_operation : public base_operation
    {
       struct fee_parameters_type { 
-         uint64_t membership_annual_fee   =  2000 * GRAPHENE_BLOCKCHAIN_PRECISION;
-         uint64_t membership_lifetime_fee = 10000 * GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to upgrade to a lifetime member
+         uint64_t membership_annual_fee   =  200 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t membership_lifetime_fee = 1000 * GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to upgrade to a lifetime member
       };
 
       asset             fee;

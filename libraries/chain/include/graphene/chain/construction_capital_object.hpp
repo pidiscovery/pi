@@ -46,6 +46,7 @@ namespace graphene { namespace chain {
         share_type amount;
         uint32_t period;
         uint16_t total_periods;
+        fc::time_point_sec timestamp;
 
         uint16_t achieved;
         uint16_t pending;
@@ -170,6 +171,7 @@ FC_REFLECT_DERIVED( graphene::chain::construction_capital_object,
                     (amount)
                     (period)
                     (total_periods)
+                    (timestamp)
                     (achieved)
                     (pending)
                     (next_slot)

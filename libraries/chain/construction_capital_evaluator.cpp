@@ -59,6 +59,7 @@ namespace graphene { namespace chain {
                 obj.achieved = 0;
                 obj.pending = 0;
                 obj.next_slot = fc::time_point_sec(db().head_block_time() + op.period);
+                obj.timestamp = db().head_block_time();
             });
             return new_cc_object.id;
     } FC_CAPTURE_AND_RETHROW( (op) ) }
@@ -129,7 +130,7 @@ namespace graphene { namespace chain {
             //calculate accelerate got already by other votes
             share_type accelerate_got = 0;
             const auto& index_vote_to = db().get_index_type<construction_capital_vote_index>().indices().get<by_vote_to>();
-            for (auto it = index_vote_to.lower_bound(op.cc_to); it->cc_to == op.cc_to; ++it) {
+            for (auto it = index_vote_to.lower_bound(op.cc_to); it != index_vote_to.end() && it->cc_to == op.cc_to; ++it) {
                 auto from_obj_it = index.find(it->cc_from);
                 accelerate_got += from_obj_it->amount * from_obj_it->period * from_obj_it->total_periods;
             }

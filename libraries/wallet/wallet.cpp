@@ -2096,7 +2096,6 @@ public:
       tx.operations.push_back(xfer_op);
       set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
       tx.validate();
-
       return sign_transaction(tx, broadcast);
    } FC_CAPTURE_AND_RETHROW( (from)(to)(amount)(asset_symbol)(memo)(broadcast) ) }
 

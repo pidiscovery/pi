@@ -24,7 +24,7 @@
 
 #include <graphene/app/database_api.hpp>
 #include <graphene/chain/get_config.hpp>
-
+#include <graphene/transaction_record/transaction_record_plugin.hpp>
 #include <fc/bloom_filter.hpp>
 #include <fc/smart_ref_impl.hpp>
 
@@ -144,7 +144,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       vector<construction_capital_object> get_account_construction_capital( account_id_type id )const;
       fc::optional<construction_capital_object> get_construction_capital( construction_capital_id_type id )const;
       vector<construction_capital_vote_object> get_construction_capital_vote( construction_capital_id_type id )const;
-
+      fc::optional<construction_capital_history_object> get_construction_capital_history( construction_capital_id_type id )const;
    //private:
       template<typename T>
       void subscribe_to_item( const T& i )const
@@ -355,6 +355,16 @@ optional<signed_transaction> database_api::get_recent_transaction_by_id( const t
    } catch ( ... ) {
       return optional<signed_transaction>();
    }
+}
+
+optional<signed_transaction> database_api::get_transaction_by_id( const transaction_id_type& id )const
+{
+    const auto& idx = my->_db.get_index_type<transaction_record::transaction_record_index>().indices().get<transaction_record::by_trx_id>();
+    auto it = idx.find(id);
+    if (it != idx.end()) {
+        return get_transaction(it->block_num, it->trx_in_block);
+    }
+    return optional<signed_transaction>();
 }
 
 processed_transaction database_api_impl::get_transaction(uint32_t block_num, uint32_t trx_num)const
@@ -1833,6 +1843,43 @@ fc::optional<construction_capital_object> database_api_impl::get_construction_ca
     auto it = idx.find(id);
     if (it != idx.end()) {
         return *it;
+    }
+    return {};
+}
+
+fc::optional<construction_capital_history_object> database_api::get_construction_capital_history( construction_capital_id_type id )const
+{
+    return my->get_construction_capital_history(id);
+}
+
+fc::optional<construction_capital_history_object> database_api_impl::get_construction_capital_history( construction_capital_id_type id )const
+{
+    {
+        // check for construction_capital_history_index, if found, return it
+        const auto& idx = _db.get_index_type<construction_capital_history_index>().indices().get<by_cc_id>();
+        auto it = idx.find(id);
+        if (it != idx.end()) {
+            return *it;
+        }
+    }
+    {
+        // fall back to construction_capital_index if not found in construction_capital_history_index
+        // no incentive or vote info here then
+        const auto& idx = _db.get_index_type<construction_capital_index>().indices().get<by_id>();
+        auto it = idx.find(id);
+        if (it != idx.end()) {
+            auto &obj = *it;
+            construction_capital_history_object ccho;
+            ccho.ccid = id;
+            ccho.owner = obj.owner;
+            ccho.amount = obj.amount;
+            ccho.period = obj.period;
+            ccho.total_periods = obj.total_periods;
+            ccho.timestamp = obj.timestamp;
+            ccho.next_slot = obj.next_slot;
+            ccho.achieved = obj.achieved;
+            return ccho;
+        }
     }
     return {};
 }

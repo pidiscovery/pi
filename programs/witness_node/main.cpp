@@ -26,6 +26,8 @@
 #include <graphene/witness/witness.hpp>
 #include <graphene/account_history/account_history_plugin.hpp>
 #include <graphene/market_history/market_history_plugin.hpp>
+#include <graphene/incentive_history/incentive_history_plugin.hpp>
+#include <graphene/transaction_record/transaction_record_plugin.hpp>
 
 #include <fc/exception/exception.hpp>
 #include <fc/thread/thread.hpp>
@@ -68,13 +70,85 @@ int main(int argc, char** argv) {
             ("help,h", "Print this help message and exit.")
             ("data-dir,d", bpo::value<boost::filesystem::path>()->default_value("witness_node_data_dir"), "Directory containing databases, configuration file, etc.")
             ;
-
       bpo::variables_map options;
 
-      auto witness_plug = node->register_plugin<witness_plugin::witness_plugin>();
-      auto history_plug = node->register_plugin<account_history::account_history_plugin>();
-      auto market_history_plug = node->register_plugin<market_history::market_history_plugin>();
+      // Paser cli opt without plugin opts
+      try
+      {
+         bpo::options_description cli, cfg;
+         node->set_program_options(cli, cfg);
+         bpo::options_description app_options_tmp(app_options);
+         app_options_tmp.add(cli);
+         bpo::store(bpo::parse_command_line(argc, argv, app_options_tmp), options);
+      }
+      catch (const boost::program_options::error& e)
+      {
+         std::cerr << "Error parsing command line: " << e.what() << "\n";
+         return 1;
+      }
 
+      if( options.count("help") )
+      {
+         std::cout << app_options << "\n";
+         return 0;
+      }
+       
+      // witness plugin
+      if( options.count("disable-witness-plugin") )
+      {
+         std::cout << "witness-plugin disabled" << "\n";
+      } 
+      else 
+      {
+         std::cout << "witness-plugin enabled" << "\n";
+         node->register_plugin<witness_plugin::witness_plugin>();
+      }
+
+      // account-history plugin
+      if( options.count("disable-account-history-plugin") )
+      {
+         std::cout << "account-history-plugin disabled" << "\n";
+      } 
+      else 
+      {
+         std::cout << "account-history-plugin enabled" << "\n";
+         node->register_plugin<account_history::account_history_plugin>();
+      }
+
+      // market-history plugin
+      if( options.count("disable-market-history-plugin") )
+      {
+         std::cout << "market-history-plugin disabled" << "\n";
+      } 
+      else 
+      {
+         std::cout << "market-history-plugin enabled" << "\n";
+         node->register_plugin<market_history::market_history_plugin>();
+      }
+
+      // incentive-history plugin
+      if( options.count("disable-incentive-history-plugin") )
+      {
+         std::cout << "incentive-history-plugin disabled" << "\n";
+      } 
+      else 
+      {
+         std::cout << "incentive-history-plugin enabled" << "\n";
+         node->register_plugin<incentive_history::incentive_history_plugin>();
+      }
+
+      // transaction-record plugin
+      if( options.count("disable-transaction-record-plugin") )
+      {
+         std::cout << "transaction-record-plugin disabled" << "\n";
+      } 
+      else 
+      {
+         std::cout << "transaction-record-plugin enabled" << "\n";
+         node->register_plugin<transaction_record::transaction_record_plugin>();
+      }
+
+      // parse cli opt after register plugin, this will load plugin opts
       try
       {
          bpo::options_description cli, cfg;
@@ -85,14 +159,8 @@ int main(int argc, char** argv) {
       }
       catch (const boost::program_options::error& e)
       {
-        std::cerr << "Error parsing command line: " << e.what() << "\n";
-        return 1;
-      }
-
-      if( options.count("help") )
-      {
-         std::cout << app_options << "\n";
-         return 0;
+         std::cerr << "Error parsing command line: " << e.what() << "\n";
+         return 1;
       }
 
       fc::path data_dir;
@@ -108,19 +176,6 @@ int main(int argc, char** argv) {
       {
          // get the basic options
          bpo::store(bpo::parse_config_file<char>(config_ini_path.preferred_string().c_str(), cfg_options, true), options);
-
-         // try to get logging options from the config file.
-         try
-         {
-            fc::path logging_ini_path = data_dir / "logging.ini";
-            fc::optional<fc::logging_config> logging_config = load_logging_config_from_ini_file(logging_ini_path);
-            if (logging_config)
-               fc::configure_logging(*logging_config);
-         }
-         catch (const fc::exception&)
-         {
-            wlog("Error parsing logging config from config file ${config}, using default config", ("config", config_ini_path.preferred_string()));
-         }
       }
       else 
       {
@@ -150,12 +205,34 @@ int main(int argc, char** argv) {
             }
             out_cfg << "\n";
          }
-         write_default_logging_config_to_stream(out_cfg);
          out_cfg.close(); 
+      }
+
+      // load logging config from logging.ini
+      fc::path logging_ini_path = data_dir / "logging.ini";
+      if( fc::exists(logging_ini_path) )
+      {
+         try 
+         {
+            fc::path logging_ini_path = data_dir / "logging.ini";
+            fc::optional<fc::logging_config> logging_config = load_logging_config_from_ini_file(logging_ini_path);
+            if (logging_config)
+               fc::configure_logging(*logging_config);            
+         }
+         catch (const fc::exception&)
+         {
+            wlog("Error parsing logging config from config file ${config}, using default config", ("config", config_ini_path.preferred_string()));
+         } 
+      }
+      else
+      {
+         std::ofstream out_cfg(logging_ini_path.preferred_string());
+         write_default_logging_config_to_stream(out_cfg);
+         out_cfg.close();
          // read the default logging config we just wrote out to the file and start using it
-         fc::optional<fc::logging_config> logging_config = load_logging_config_from_ini_file(config_ini_path);
+         fc::optional<fc::logging_config> logging_config = load_logging_config_from_ini_file(logging_ini_path);
          if (logging_config)
-            fc::configure_logging(*logging_config);
+            fc::configure_logging(*logging_config);             
       }
 
       bpo::notify(options);

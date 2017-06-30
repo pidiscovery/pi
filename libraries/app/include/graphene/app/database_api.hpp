@@ -43,6 +43,7 @@
 #include <graphene/chain/construction_capital_object.hpp>
 
 #include <graphene/market_history/market_history_plugin.hpp>
+#include <graphene/incentive_history/incentive_history_plugin.hpp>
 
 #include <fc/api.hpp>
 #include <fc/optional.hpp>
@@ -62,6 +63,7 @@ namespace graphene { namespace app {
 using namespace graphene::chain;
 using namespace graphene::market_history;
 using namespace std;
+using namespace incentive_history;
 
 class database_api_impl;
 
@@ -177,6 +179,8 @@ class database_api
        * included in the blockchain.
        */
       optional<signed_transaction> get_recent_transaction_by_id( const transaction_id_type& id )const;
+
+      optional<signed_transaction> get_transaction_by_id( const transaction_id_type& id )const;
 
       /////////////
       // Globals //
@@ -577,7 +581,7 @@ class database_api
       vector<construction_capital_object> get_account_construction_capital( account_id_type id )const;
       fc::optional<construction_capital_object> get_construction_capital( construction_capital_id_type id )const;
       vector<construction_capital_vote_object> get_construction_capital_vote( construction_capital_id_type id )const;
-
+      fc::optional<construction_capital_history_object> get_construction_capital_history( construction_capital_id_type id )const;
 
    private:
       std::shared_ptr< database_api_impl > my;
@@ -606,6 +610,7 @@ FC_API(graphene::app::database_api,
    (get_block)
    (get_transaction)
    (get_recent_transaction_by_id)
+   (get_transaction_by_id)
 
    // Globals
    (get_chain_properties)
@@ -686,5 +691,6 @@ FC_API(graphene::app::database_api,
    //Incentive & Construction Capital
    (get_account_construction_capital)
    (get_construction_capital)
+   (get_construction_capital_history)
    (get_construction_capital_vote)
 )
