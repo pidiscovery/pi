@@ -997,6 +997,8 @@ void application::set_program_options(boost::program_options::options_descriptio
          ("disable-witness-plugin", "Disable witness-plugin")
          ("disable-account-history-plugin", "Disable account-history-plugin")
          ("disable-market-history-plugin", "Disable market-history-plugin")
+         ("disable-transaction-record-plugin", "Disable transaction-record-plugin")
+         ("disable-incentive-history-plugin", "Disable incentive-history-plugin")
          ("genesis-timestamp", bpo::value<uint32_t>(), "Replace timestamp from genesis.json with current time plus this many seconds (experts only!)")
          ;
    command_line_options.add(_cli_options);

@@ -69,19 +69,21 @@ class incentive_history_plugin_impl {
             // initialize construction_capital_history_object by record of construction_capital_object
             const auto& idx = database().get_index_type<construction_capital_index>().indices().get<by_id>();
             auto it = idx.find(ccid);
-            FC_ASSERT(it != idx.end(),
-                "construction capital ${cc} not found",
-                ("cc", ccid)
-            );
-            auto &obj = *it;
-            ccho.ccid = ccid;
-            ccho.owner = obj.owner;
-            ccho.amount = obj.amount;
-            ccho.period = obj.period;
-            ccho.total_periods = obj.total_periods;
-            ccho.timestamp = obj.timestamp;
-            ccho.next_slot = obj.next_slot;
-            ccho.achieved = obj.achieved;
+            if (it != idx.end()) {
+                auto &obj = *it;
+                ccho.ccid = ccid;
+                ccho.owner = obj.owner;
+                ccho.amount = obj.amount;
+                ccho.period = obj.period;
+                ccho.total_periods = obj.total_periods;
+                ccho.timestamp = obj.timestamp;
+                ccho.next_slot = obj.next_slot;
+                ccho.achieved = obj.achieved;
+            } else {
+                // TODO this is not right when only one total_period, FIX IT LATER
+                wlog("construction capital ${cc} not found", ("cc", ccid));
+                ccho.ccid = ccid;
+            }
         }
 
         uint32_t calculate_accelerate(const construction_capital_id_type &cc_from_id, const construction_capital_id_type &cc_to_id) {
@@ -92,7 +94,7 @@ class incentive_history_plugin_impl {
             share_type accelerate_period_amount = cc_to->amount * cc_to->period * cc_to->total_periods;
             share_type accelerate_got = 0;
             const auto& index_vote_to = database().get_index_type<construction_capital_vote_index>().indices().get<by_vote_to>();
-            for (auto it = index_vote_to.lower_bound(cc_to_id); it->cc_to == cc_to_id; ++it) {
+            for (auto it = index_vote_to.lower_bound(cc_to_id); it!= index_vote_to.end() && it->cc_to == cc_to_id; ++it) {
                 if (it->cc_from == cc_from_id) {
                     continue;
                 }

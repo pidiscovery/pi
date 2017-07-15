@@ -36,7 +36,7 @@ namespace graphene { namespace chain {
     */
    struct committee_member_create_operation : public base_operation
    {
-      struct fee_parameters_type { uint64_t fee = 5000 * GRAPHENE_BLOCKCHAIN_PRECISION; };
+      struct fee_parameters_type { uint64_t fee = 500 * GRAPHENE_BLOCKCHAIN_PRECISION; };
 
       asset                                 fee;
       /// The account which owns the committee_member. This account pays the fee for this operation.
@@ -56,7 +56,7 @@ namespace graphene { namespace chain {
     */
    struct committee_member_update_operation : public base_operation
    {
-      struct fee_parameters_type { uint64_t fee = 20 * GRAPHENE_BLOCKCHAIN_PRECISION; };
+      struct fee_parameters_type { uint64_t fee = 2 * GRAPHENE_BLOCKCHAIN_PRECISION; };
 
       asset                                 fee;
       /// The committee member to update.
@@ -82,7 +82,7 @@ namespace graphene { namespace chain {
     */
    struct committee_member_update_global_parameters_operation : public base_operation
    {
-      struct fee_parameters_type { uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION; };
+      struct fee_parameters_type { uint64_t fee = 0.5 * GRAPHENE_BLOCKCHAIN_PRECISION; };
 
       asset             fee;
       chain_parameters  new_parameters;
@@ -91,16 +91,45 @@ namespace graphene { namespace chain {
       void            validate()const;
    };
 
+
+   struct committee_member_issue_construction_capital_operation : public base_operation
+   {
+      struct fee_parameters_type { uint64_t fee = GRAPHENE_BLOCKCHAIN_PRECISION; };
+
+      asset             fee;
+      share_type        amount;
+      account_id_type   receiver;
+
+      account_id_type fee_payer()const { return account_id_type(); }
+      void            validate()const;       
+   };
+
+   struct committee_member_grant_instant_payback_operation : public base_operation
+   {
+      struct fee_parameters_type { uint64_t fee = 0.5 * GRAPHENE_BLOCKCHAIN_PRECISION; };
+
+      asset             fee;
+      account_id_type   account_id;
+      bool              grant;
+
+      account_id_type fee_payer()const { return account_id_type(); }
+      void            validate()const;       
+   };
+   
    /// TODO: committee_member_resign_operation : public base_operation
 
 } } // graphene::chain
 FC_REFLECT( graphene::chain::committee_member_create_operation::fee_parameters_type, (fee) )
 FC_REFLECT( graphene::chain::committee_member_update_operation::fee_parameters_type, (fee) )
 FC_REFLECT( graphene::chain::committee_member_update_global_parameters_operation::fee_parameters_type, (fee) )
-
+FC_REFLECT( graphene::chain::committee_member_issue_construction_capital_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::chain::committee_member_grant_instant_payback_operation::fee_parameters_type, (fee) )
 
 FC_REFLECT( graphene::chain::committee_member_create_operation,
             (fee)(committee_member_account)(url) )
 FC_REFLECT( graphene::chain::committee_member_update_operation,
             (fee)(committee_member)(committee_member_account)(new_url) )
 FC_REFLECT( graphene::chain::committee_member_update_global_parameters_operation, (fee)(new_parameters) );
+FC_REFLECT( graphene::chain::committee_member_issue_construction_capital_operation, (fee)(amount)(receiver) );
+FC_REFLECT( graphene::chain::committee_member_grant_instant_payback_operation, (fee)(account_id)(grant) );
+

@@ -42,9 +42,11 @@ namespace graphene { namespace chain {
                 ("cc", op.ccid)
             );
             const auto& gpo = db().get_global_properties();
-            real128 amount = real128(it->amount.value)
+            real128 amount0 = real128(it->amount.value) / real128(it->total_periods);
+            real128 amount1 = real128(it->amount.value)
                 * real128(it->period) / real128(GRAPHENE_SECONDS_PER_YEAR) 
                 * real128(gpo.parameters.issuance_rate) / real128(GRAPHENE_ISSUANCE_RATE_SCALE);
+            real128 amount = amount0 + amount1;
             //check if incentive amount is valid
             FC_ASSERT(
                 amount.to_uint64() == op.amount,
@@ -95,12 +97,10 @@ namespace graphene { namespace chain {
             //adjust balance
             db().adjust_balance(obj.owner, asset(op.amount, asset_id_type(0)));
         });
-        wlog("incentive run, cc: ${cc}", ("cc", *it));
+        // wlog("incentive run, cc: ${cc}", ("cc", *it));
         //if release of this construction capital is done, 
-        //release the locked shares and remove this object
         if (it->achieved >= it->total_periods) {
             wlog("incentive done, cc: ${cc}", ("cc", *it));
-            db().adjust_balance(it->owner, asset(it->amount, asset_id_type(0)));
             db().remove(*it);
         }        
         return void_result();

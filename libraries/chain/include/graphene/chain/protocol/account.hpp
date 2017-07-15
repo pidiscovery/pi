@@ -75,7 +75,7 @@ namespace graphene { namespace chain {
 
       struct fee_parameters_type
       {
-         uint64_t basic_fee      = 0.05*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
+         uint64_t basic_fee      = 0.01*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
          uint64_t premium_fee    = 20*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
          uint32_t price_per_kbyte = 0.01 * GRAPHENE_BLOCKCHAIN_PRECISION;
       };
@@ -128,8 +128,8 @@ namespace graphene { namespace chain {
 
       struct fee_parameters_type
       {
-         share_type fee             = 0.02 * GRAPHENE_BLOCKCHAIN_PRECISION;
-         uint32_t   price_per_kbyte = 0.01 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         share_type fee             = 0.001 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint32_t   price_per_kbyte = 0.001 * GRAPHENE_BLOCKCHAIN_PRECISION;
       };
 
       asset fee;
@@ -180,7 +180,7 @@ namespace graphene { namespace chain {
     */
    struct account_whitelist_operation : public base_operation
    {
-      struct fee_parameters_type { share_type fee = 300000; };
+      struct fee_parameters_type { share_type fee = 0.05 * GRAPHENE_BLOCKCHAIN_PRECISION; };
       enum account_listing {
          no_listing = 0x0, ///< No opinion is specified about this account
          white_listed = 0x1, ///< This account is whitelisted, but not blacklisted
@@ -219,8 +219,8 @@ namespace graphene { namespace chain {
    struct account_upgrade_operation : public base_operation
    {
       struct fee_parameters_type { 
-         uint64_t membership_annual_fee   =  200 * GRAPHENE_BLOCKCHAIN_PRECISION;
-         uint64_t membership_lifetime_fee = 1000 * GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to upgrade to a lifetime member
+         uint64_t membership_annual_fee   =  10 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint64_t membership_lifetime_fee = 100 * GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to upgrade to a lifetime member
       };
 
       asset             fee;
@@ -250,7 +250,7 @@ namespace graphene { namespace chain {
     */
    struct account_transfer_operation : public base_operation
    {
-      struct fee_parameters_type { uint64_t fee = 500 * GRAPHENE_BLOCKCHAIN_PRECISION; };
+      struct fee_parameters_type { uint64_t fee = 100 * GRAPHENE_BLOCKCHAIN_PRECISION; };
 
       asset           fee;
       account_id_type account_id;

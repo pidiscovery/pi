@@ -54,4 +54,22 @@ namespace graphene { namespace chain {
          void_result do_apply( const committee_member_update_global_parameters_operation& o );
    };
 
+   class committee_member_issue_construction_capital_evaluator : public evaluator<committee_member_issue_construction_capital_evaluator>
+   {
+      public:
+         typedef committee_member_issue_construction_capital_operation operation_type;
+
+         void_result do_evaluate( const committee_member_issue_construction_capital_operation& o );
+         void_result do_apply( const committee_member_issue_construction_capital_operation& o );
+   };
+
+   class committee_member_grant_instant_payback_evaluator : public evaluator<committee_member_grant_instant_payback_evaluator>
+   {
+      public:
+         typedef committee_member_grant_instant_payback_operation operation_type;
+
+         void_result do_evaluate( const committee_member_grant_instant_payback_operation& o );
+         void_result do_apply( const committee_member_grant_instant_payback_operation& o );
+   };
+
 } } // graphene::chain

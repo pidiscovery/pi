@@ -69,7 +69,7 @@ namespace graphene { namespace chain {
    struct proposal_create_operation : public base_operation
    {
        struct fee_parameters_type { 
-          uint64_t fee            = 20 * GRAPHENE_BLOCKCHAIN_PRECISION; 
+          uint64_t fee            = 0.05 * GRAPHENE_BLOCKCHAIN_PRECISION; 
           uint32_t price_per_kbyte = 10;
        };
 
@@ -118,7 +118,7 @@ namespace graphene { namespace chain {
    struct proposal_update_operation : public base_operation
    {
       struct fee_parameters_type { 
-         uint64_t fee            = 20 * GRAPHENE_BLOCKCHAIN_PRECISION; 
+         uint64_t fee            = 0.05 * GRAPHENE_BLOCKCHAIN_PRECISION; 
          uint32_t price_per_kbyte = 10;
       };
 
@@ -154,7 +154,7 @@ namespace graphene { namespace chain {
     */
    struct proposal_delete_operation : public base_operation
    {
-      struct fee_parameters_type { uint64_t fee =  GRAPHENE_BLOCKCHAIN_PRECISION; };
+      struct fee_parameters_type { uint64_t fee =  0.05 * GRAPHENE_BLOCKCHAIN_PRECISION; };
 
       account_id_type   fee_paying_account;
       bool              using_owner_authority = false;

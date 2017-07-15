@@ -148,8 +148,8 @@ struct blind_output
 struct transfer_to_blind_operation : public base_operation
 {
    struct fee_parameters_type { 
-      uint64_t fee              = 5*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
-      uint32_t price_per_output = 5*GRAPHENE_BLOCKCHAIN_PRECISION;
+      uint64_t fee              = 0.01*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
+      uint32_t price_per_output = 0.01*GRAPHENE_BLOCKCHAIN_PRECISION;
    };
 
 
@@ -171,7 +171,7 @@ struct transfer_to_blind_operation : public base_operation
 struct transfer_from_blind_operation : public base_operation
 {
    struct fee_parameters_type { 
-      uint64_t fee              = 5*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
+      uint64_t fee              = 0.01*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
    };
 
    asset                 fee;
@@ -236,8 +236,8 @@ struct transfer_from_blind_operation : public base_operation
 struct blind_transfer_operation : public base_operation
 {
    struct fee_parameters_type { 
-      uint64_t fee              = 5*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
-      uint32_t price_per_output = 5*GRAPHENE_BLOCKCHAIN_PRECISION;
+      uint64_t fee              = 0.01*GRAPHENE_BLOCKCHAIN_PRECISION; ///< the cost to register the cheapest non-free account
+      uint32_t price_per_output = 0.01*GRAPHENE_BLOCKCHAIN_PRECISION;
    };
 
    asset                 fee;

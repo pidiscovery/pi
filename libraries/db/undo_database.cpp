@@ -41,6 +41,9 @@ undo_database::session undo_database::start_undo_session( bool force_enable )
       _stack.pop_front();
 
    _stack.emplace_back();
+   if (size() == 1) {
+       _stack.emplace_back();
+   }
    ++_active_sessions;
    return session(*this, disable_on_exit );
 }

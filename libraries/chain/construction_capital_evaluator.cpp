@@ -49,7 +49,7 @@ namespace graphene { namespace chain {
 
     object_id_type construction_capital_create_evaluator::do_apply( const construction_capital_create_operation& op ) {
         try {
-            wlog("cc create: ${cc_op}", ("cc_op", op));
+//            wlog("cc create: ${cc_op}", ("cc_op", op));
             db().adjust_balance(op.account_id, -asset(op.amount, asset_id_type(0)));
             const auto& new_cc_object = db().create<construction_capital_object>( [&]( construction_capital_object& obj ){
                 obj.owner = op.account_id;
@@ -61,6 +61,17 @@ namespace graphene { namespace chain {
                 obj.next_slot = fc::time_point_sec(db().head_block_time() + op.period);
                 obj.timestamp = db().head_block_time();
             });
+            // instant payback
+            account_object &acc_obj = (account_object &)db().get_object(op.account_id);
+            real128 amount = real128(op.amount.value) * real128(GRAPHENE_DEFAULT_INSTANT_PAYBACL_RATE) / real128(GRAPHENE_ISSUANCE_RATE_SCALE);
+            if (acc_obj.is_instant_payback(db().head_block_time())) {    
+                db().adjust_balance(op.account_id, asset(amount.to_uint64(), asset_id_type(0)));
+                db().adjust_balance(GRAPHENE_MARKET_FOUND_ACCOUNT, asset(amount.to_uint64(), asset_id_type(0)));
+            } else {
+                db().adjust_balance(GRAPHENE_MARKET_FOUND_ACCOUNT, asset(amount.to_uint64(), asset_id_type(0)));
+            }
+            // all locked shares go to GRAPHENE_CONSTRUCTION_CAPITAL_ACCOUNT
+            db().adjust_balance(GRAPHENE_CONSTRUCTION_CAPITAL_ACCOUNT, asset(op.amount, asset_id_type(0)));
             return new_cc_object.id;
     } FC_CAPTURE_AND_RETHROW( (op) ) }
 

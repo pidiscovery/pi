@@ -2442,6 +2442,70 @@ public:
       return sign_transaction(tx, broadcast);
    }
 
+   signed_transaction propose_supply_increase(
+         const string& proposing_account,
+         fc::time_point_sec expiration_time,
+         const string& receiver,
+         const string& amount,
+         bool broadcast = false)
+   {
+      const chain_parameters& current_params = get_global_properties().parameters;
+      const fee_schedule_type& current_fees = *(current_params.current_fees);
+       
+      account_object receiver_account = get_account(receiver);
+      committee_member_issue_construction_capital_operation update_op;
+      update_op.amount = std::stoull(amount);
+      update_op.receiver = receiver_account.id;
+
+      proposal_create_operation prop_op;
+
+      prop_op.expiration_time = expiration_time;
+      prop_op.review_period_seconds = current_params.committee_proposal_review_period;
+      prop_op.fee_paying_account = get_account(proposing_account).id;
+
+      prop_op.proposed_ops.emplace_back( update_op );
+      current_params.current_fees->set_fee( prop_op.proposed_ops.back().op );
+
+      signed_transaction tx;
+      tx.operations.push_back(prop_op);
+      set_operation_fees(tx, current_params.current_fees);
+      tx.validate();
+
+      return sign_transaction(tx, broadcast);
+   }         
+
+   signed_transaction propose_instant_payback(
+        const string& proposing_account,
+        fc::time_point_sec expiration_time,
+        const string& account,
+        const bool grant,
+        bool broadcast  = false ) 
+   {
+      const chain_parameters& current_params = get_global_properties().parameters;
+      const fee_schedule_type& current_fees = *(current_params.current_fees);
+       
+      account_object account_obj = get_account(account);
+      committee_member_grant_instant_payback_operation update_op;
+      update_op.account_id = account_obj.id;
+      update_op.grant = grant;
+
+      proposal_create_operation prop_op;
+
+      prop_op.expiration_time = expiration_time;
+      prop_op.review_period_seconds = current_params.committee_proposal_review_period;
+      prop_op.fee_paying_account = get_account(proposing_account).id;
+
+      prop_op.proposed_ops.emplace_back( update_op );
+      current_params.current_fees->set_fee( prop_op.proposed_ops.back().op );
+
+      signed_transaction tx;
+      tx.operations.push_back(prop_op);
+      set_operation_fees(tx, current_params.current_fees);
+      tx.validate();
+
+      return sign_transaction(tx, broadcast);
+   }
+
    signed_transaction approve_proposal(
       const string& fee_paying_account,
       const string& proposal_id,
@@ -3596,6 +3660,27 @@ signed_transaction wallet_api::propose_fee_change(
    )
 {
    return my->propose_fee_change( proposing_account, expiration_time, changed_fees, broadcast );
+}
+
+signed_transaction wallet_api::propose_supply_increase(
+   const string& proposing_account,
+   fc::time_point_sec expiration_time,
+   const string& receiver,
+   const string& amount,
+   bool broadcast /* = false */
+   )
+{
+   return my->propose_supply_increase( proposing_account, expiration_time, receiver, amount, broadcast );
+}
+
+signed_transaction wallet_api::propose_instant_payback(
+    const string& proposing_account,
+    fc::time_point_sec expiration_time,
+    const string& account,
+    const bool grant,
+    bool broadcast /* = false */)
+{
+   return my->propose_instant_payback( proposing_account, expiration_time, account, grant, broadcast );
 }
 
 signed_transaction wallet_api::approve_proposal(

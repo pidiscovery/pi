@@ -33,7 +33,7 @@ namespace graphene { namespace chain {
     * @brief Create a construction capital
     */  
     struct construction_capital_create_operation : public base_operation {
-        struct fee_parameters_type { uint64_t fee = 10 * GRAPHENE_BLOCKCHAIN_PRECISION; };
+        struct fee_parameters_type { uint64_t fee = 0; };
 
         asset           fee;
         account_id_type account_id;
@@ -55,7 +55,7 @@ namespace graphene { namespace chain {
     * @brief Vote other's construction capital to incentive their incentive speed
     */  
     struct construction_capital_vote_operation : public base_operation {
-        struct fee_parameters_type { uint64_t fee = 1 * GRAPHENE_BLOCKCHAIN_PRECISION; };
+        struct fee_parameters_type { uint64_t fee = 0; };
         asset           fee;
         account_id_type account_id;
         construction_capital_id_type cc_from;   //own construction capital id

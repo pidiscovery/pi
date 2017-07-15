@@ -133,6 +133,12 @@ namespace graphene { namespace chain {
           * See @ref is_lifetime_member, @ref is_basic_account, @ref is_annual_member, and @ref is_member
           */
          time_point_sec membership_expiration_date;
+         /**
+          * The time at which this account's instant payback expires.
+          * during instant payback period, accont's construction capital
+          * will get an instant payback when created. 
+          */
+         time_point_sec instant_payback_expiration_date;
 
          ///The account that paid the fee to register this account. Receives a percentage of referral rewards.
          account_id_type registrar;
@@ -258,6 +264,11 @@ namespace graphene { namespace chain {
          {
             return !is_basic_account(now);
          }
+         /// @return true if this is an instant payback account; false otherwise.
+         bool is_instant_payback(time_point_sec now)const
+         {
+            return now < instant_payback_expiration_date;
+         }
 
          account_id_type get_id()const { return id; }
    };
@@ -368,7 +379,7 @@ namespace graphene { namespace chain {
 
 FC_REFLECT_DERIVED( graphene::chain::account_object,
                     (graphene::db::object),
-                    (membership_expiration_date)(registrar)(referrer)(lifetime_referrer)
+                    (membership_expiration_date)(instant_payback_expiration_date)(registrar)(referrer)(lifetime_referrer)
                     (network_fee_percentage)(lifetime_referrer_fee_percentage)(referrer_rewards_percentage)
                     (name)(owner)(active)(options)(statistics)(whitelisting_accounts)(blacklisting_accounts)
                     (whitelisted_accounts)(blacklisted_accounts)

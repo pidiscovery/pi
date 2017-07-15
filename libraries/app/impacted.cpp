@@ -156,6 +156,17 @@ struct get_impacted_account_visitor
    }
    void operator()( const committee_member_update_global_parameters_operation& op ) {}
 
+   void operator()( const committee_member_issue_construction_capital_operation& op ) 
+   {
+      _impacted.insert( op.receiver );
+      _impacted.insert( GRAPHENE_CONSTRUCTION_CAPITAL_ACCOUNT );         
+   }
+
+   void operator()( const committee_member_grant_instant_payback_operation& op ) 
+   {
+      _impacted.insert( op.account_id );
+   }
+
    void operator()( const vesting_balance_create_operation& op )
    {
       _impacted.insert( op.owner );

@@ -89,4 +89,63 @@ void_result committee_member_update_global_parameters_evaluator::do_apply(const 
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
+void_result committee_member_issue_construction_capital_evaluator::do_evaluate(const committee_member_issue_construction_capital_operation& o)
+{ try {
+   FC_ASSERT(trx_state->_is_proposed_trx);
+   FC_ASSERT(
+         time_point(db().head_block_time()) <= time_point::from_iso_string("2018-07-01T00:00:00"),
+         "construction capital can only be issued before 2018-07-01T00:00:00, now is: ${now}",
+         ("now", db().head_block_time())
+   );
+   FC_ASSERT(
+         o.amount <= db().get_balance(GRAPHENE_CONSTRUCTION_CAPITAL_ACCOUNT, asset_id_type(0)).amount,
+         "transfer amount:${amount} should not greater than GRAPHENE_CONSTRUCTION_CAPITAL_ACCOUNT's balance: ${cca}",
+         ("amount", o.amount)
+         ("cca", db().get_balance(GRAPHENE_CONSTRUCTION_CAPITAL_ACCOUNT, asset_id_type(0)).amount)
+   );
+   FC_ASSERT(
+         db().find(o.receiver) != nullptr,
+         "receiver: ${receiver} not found",
+         ("receiver", o.receiver)
+   );
+   FC_ASSERT(
+         o.amount > o.fee.amount,
+         "increase_supply should issue ${fee} at least, only ${amt} specified",
+         ("fee", o.fee.amount)
+         ("amt", o.amount)
+   );
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
+void_result committee_member_issue_construction_capital_evaluator::do_apply(const committee_member_issue_construction_capital_operation& o)
+{ try {
+   db().adjust_balance(o.receiver, asset(o.amount, asset_id_type(0)));
+   db().adjust_balance(GRAPHENE_CONSTRUCTION_CAPITAL_ACCOUNT, -asset(o.amount, asset_id_type(0)));
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
+void_result committee_member_grant_instant_payback_evaluator::do_evaluate(const committee_member_grant_instant_payback_operation& o)
+{ try {
+   FC_ASSERT(trx_state->_is_proposed_trx);
+   FC_ASSERT(
+         db().find(o.account_id) != nullptr,
+         "account: ${account} not found",
+         ("account", o.account_id)
+   );
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
+void_result committee_member_grant_instant_payback_evaluator::do_apply(const committee_member_grant_instant_payback_operation& o)
+{ try {
+   auto acc_obj = (const account_object *)db().find(o.account_id);
+   db().modify(*acc_obj, [&](account_object &obj) {
+      if (o.grant) {
+         obj.instant_payback_expiration_date = db().head_block_time() + fc::days(365);
+      } else {
+         obj.instant_payback_expiration_date = time_point::min();
+      }
+   });
+return void_result();
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
 } } // graphene::chain
