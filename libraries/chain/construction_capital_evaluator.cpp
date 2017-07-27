@@ -26,7 +26,9 @@
 #include <graphene/chain/database.hpp>
 #include <graphene/chain/protocol/asset.hpp>
 #include <graphene/chain/exceptions.hpp>
+#include <fc/uint128.hpp>
 #include <fc/real128.hpp>
+#include <graphene/chain/hardfork.hpp>
 
 using namespace fc;
 
@@ -34,6 +36,17 @@ namespace graphene { namespace chain {
     void_result construction_capital_create_evaluator::do_evaluate( const construction_capital_create_operation& op ) {
         try {
             try {
+                const auto& gpo = db().get_global_properties();
+                FC_ASSERT(op.fee.amount >= 0);
+                FC_ASSERT(op.amount >= gpo.parameters.min_construction_capital_amount);
+                FC_ASSERT(
+                    op.period >= gpo.parameters.min_construction_capital_period
+                        && op.period <= gpo.parameters.max_construction_capital_period
+                );
+                FC_ASSERT(
+                    op.total_periods >= gpo.parameters.min_construction_capital_period_len
+                        && gpo.parameters.max_construction_capital_period_len
+                );
                 // get core asset balance
                 asset balance = db().get_balance(op.account_id, asset_id_type(0)); 
                 FC_ASSERT(
@@ -58,6 +71,7 @@ namespace graphene { namespace chain {
                 obj.total_periods = op.total_periods;
                 obj.achieved = 0;
                 obj.pending = 0;
+                obj.left_vote_point = 0;
                 obj.next_slot = fc::time_point_sec(db().head_block_time() + op.period);
                 obj.timestamp = db().head_block_time();
             });
@@ -77,6 +91,13 @@ namespace graphene { namespace chain {
 
     void_result construction_capital_vote_evaluator::do_evaluate( const construction_capital_vote_operation& op ) {
         try {
+            //can not vote to itself
+            FC_ASSERT(
+                op.cc_from != op.cc_to,
+                "from:${from} = to:${to}",
+                ("from", op.cc_from)
+                ("to", op.cc_to)                
+            );
             //vote pair can exist only once
             const auto& index_vote_pair = db().get_index_type<construction_capital_vote_index>().indices().get<by_vote_pair>();
             FC_ASSERT(
@@ -122,8 +143,9 @@ namespace graphene { namespace chain {
             );            
             const auto& index_from = db().get_index_type<construction_capital_vote_index>().indices().get<by_vote_from>();
             //can vote at most GRAPHENE_DEFAULT_MAX_CONSTRUCTION_CAPITAL_VOTE votes
+            const auto& gpo = db().get_global_properties();
             FC_ASSERT(
-                index_from.count(op.cc_from) < GRAPHENE_DEFAULT_MAX_CONSTRUCTION_CAPITAL_VOTE,
+                index_from.count(op.cc_from) <= gpo.parameters.max_construction_capital_vote,
                 "No more vote share left for ${cc}",
                 ("cc", op.cc_from)
             );
@@ -132,44 +154,27 @@ namespace graphene { namespace chain {
 
     void_result construction_capital_vote_evaluator::do_apply( const construction_capital_vote_operation& op ) {
         try {
-            wlog("cc vote: ${ccv_op}", ("ccv_op", op));
+            // wlog("cc vote: ${ccv_op}", ("ccv_op", op));
             //modify destination construction capital object
             const auto& index = db().get_index_type<construction_capital_index>().indices().get<by_id>();
             const auto& cc_to = index.find(op.cc_to);
             //a share of accelerate period amount
-            share_type accelerate_period_amount = cc_to->amount * cc_to->period * cc_to->total_periods;
-            //calculate accelerate got already by other votes
-            share_type accelerate_got = 0;
-            const auto& index_vote_to = db().get_index_type<construction_capital_vote_index>().indices().get<by_vote_to>();
-            for (auto it = index_vote_to.lower_bound(op.cc_to); it != index_vote_to.end() && it->cc_to == op.cc_to; ++it) {
-                auto from_obj_it = index.find(it->cc_from);
-                accelerate_got += from_obj_it->amount * from_obj_it->period * from_obj_it->total_periods;
-            }
-            real128 max_acclerate_real = real128(accelerate_period_amount.value) * real128(cc_to->total_periods * GRAPHENE_DEFAULT_MAX_INCENTIVE_ACCELERATE_RATE) / real128(100);
-            share_type max_acclerate = max_acclerate_real.to_uint64(); 
-            //accelerate has an upper limit, when reached, no accelerate effect take palce
-            if (accelerate_got < max_acclerate) {
-                //calculate incentive accelerate
-                const auto& cc_from = index.find(op.cc_from);
-                share_type accelerate_amount = cc_from->amount * cc_from->period * cc_from->total_periods;
-                if (accelerate_amount + accelerate_got > max_acclerate) {
-                    accelerate_amount = max_acclerate - accelerate_got;
+            uint128 accelerate_period_amount = uint128(cc_to->amount.value) * uint128(cc_to->period) * uint128(cc_to->total_periods);
+            //vote points get by now
+            const auto& cc_from = index.find(op.cc_from);
+            uint128 total_point = fc::uint128(cc_from->amount.value)
+                * fc::uint128(cc_from->period) 
+                * fc::uint128(cc_from->total_periods)
+                + cc_to->left_vote_point;
+            //count accelerate
+            db().modify(*cc_to, [&](construction_capital_object &obj) {
+                while (total_point >= accelerate_period_amount && obj.pending + obj.achieved < obj.total_periods) {
+                    obj.pending += 1;
+                    total_point -= accelerate_period_amount;
                 }
-                //total accelerate time
-                real128 total_accl_real = real128(accelerate_amount.value) / real128(accelerate_period_amount.value) * real128(cc_to->period);
-                uint32_t total_accl = total_accl_real.to_uint64();
-                db().modify(*cc_to, [&](construction_capital_object &obj) {
-                    fc::microseconds accl_left(total_accl * 1000000);
-                    //calculate periods of incentive release accelerated by this vote
-                    while (accl_left >= obj.next_slot - db().head_block_time() && obj.achieved < obj.total_periods) {
-                        accl_left -= (obj.next_slot - db().head_block_time());
-                        obj.next_slot = db().head_block_time() + obj.period;
-                        obj.pending += 1;
-                    }
-                    obj.next_slot -= accl_left;
-                });
-            }
-            //record this vote
+                obj.left_vote_point = total_point;
+            });
+            // record this vote
             db().create<construction_capital_vote_object>( [&](construction_capital_vote_object& obj) {
                 obj.cc_from = op.cc_from;
                 obj.cc_to = op.cc_to;

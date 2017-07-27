@@ -63,6 +63,8 @@ struct construction_capital_history_object : public abstract_object<construction
     uint32_t period;
     uint16_t total_periods;
     fc::time_point_sec timestamp;
+    fc::uint128 left_vote_point;
+    uint32_t left_vote_time;
     fc::time_point_sec next_slot;
     uint16_t achieved;
 
@@ -123,4 +125,4 @@ class incentive_history_plugin : public graphene::app::plugin {
 FC_REFLECT( graphene::incentive_history::incentive_record, (timestamp)(amount)(reason) )
 FC_REFLECT( graphene::incentive_history::construction_capital_vote_record, (cc_from)(cc_to)(accelerate)(timestamp) )
 FC_REFLECT_DERIVED( graphene::incentive_history::construction_capital_history_object, (graphene::db::object), 
-                    (ccid) (owner) (amount) (period) (total_periods) (timestamp) (next_slot) (achieved) (vote_from) (vote_to) (incentive) )
+                    (ccid) (owner) (amount) (period) (total_periods) (timestamp) (left_vote_point) (left_vote_time) (next_slot) (achieved) (vote_from) (vote_to) (incentive) )

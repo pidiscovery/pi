@@ -71,10 +71,12 @@ void transaction_record_plugin_impl::update_transaction_records( const signed_bl
             obj.trx_id = trx.id();
             obj.block_num = block_num;
             obj.trx_in_block = counter++;
-            wlog("trx=${trx}", ("trx", trx.id()));
+            // wlog("trx=${trx}", ("trx", trx.id()));
         });
     }
-    wlog("update_transaction_records, block_num=${block_num}, trx_num=${trx_num}", ("block_num", block_num)("trx_num", counter));
+    if (b.transactions.size() > 0 || block_num % 10000 == 0) {
+        wlog("update_transaction_records, block_num=${block_num}, trx_num=${trx_num}", ("block_num", block_num)("trx_num", counter));
+    }
 }
 
 } // end namespace detail

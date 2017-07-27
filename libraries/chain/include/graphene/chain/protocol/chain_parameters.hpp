@@ -71,6 +71,13 @@ namespace graphene { namespace chain {
       uint8_t                 max_authority_depth                 = GRAPHENE_MAX_SIG_CHECK_DEPTH;
       uint32_t                issuance_rate                       = GRAPHENE_DEFAULT_ISSUANCE_RATE;           ///X * 10^6
       uint32_t                instant_payback_rate                = GRAPHENE_DEFAULT_INSTANT_PAYBACL_RATE;    ///X * 10^6
+      uint16_t                max_incentive_operations_per_block  = GRAPHENE_DEFAULT_MAX_INCENTIVE_OPERATIONS_PER_BLOCK;
+      share_type              min_construction_capital_amount     = GRAPHENE_DEFAULT_MIN_CONSTRUCTION_CAPITAL_AMOUNT;
+      uint32_t                min_construction_capital_period     = GRAPHENE_DEFAULT_MIN_CONSTRUCTION_CAPITAL_PERIOD;
+      uint32_t                max_construction_capital_period     = GRAPHENE_DEFAULT_MAX_CONSTRUCTION_CAPITAL_PERIOD;
+      uint16_t                min_construction_capital_period_len = GRAPHENE_DEFAULT_MIN_CONSTRUCTION_CAPITAL_PERIOD_LEN;
+      uint16_t                max_construction_capital_period_len = GRAPHENE_DEFAULT_MAX_CONSTRUCTION_CAPITAL_PERIOD_LEN;
+      uint8_t                 max_construction_capital_vote       = GRAPHENE_DEFAULT_MAX_CONSTRUCTION_CAPITAL_VOTE;
       extensions_type         extensions;
 
       /** defined in fee_schedule.cpp */
@@ -110,5 +117,12 @@ FC_REFLECT( graphene::chain::chain_parameters,
             (max_authority_depth)
             (issuance_rate)
             (instant_payback_rate)
+            (max_incentive_operations_per_block )
+            (min_construction_capital_amount    )
+            (min_construction_capital_period    )
+            (max_construction_capital_period    )
+            (min_construction_capital_period_len)
+            (max_construction_capital_period_len)
+            (max_construction_capital_vote      )
             (extensions)
           )

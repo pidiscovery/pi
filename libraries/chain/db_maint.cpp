@@ -145,6 +145,7 @@ void database::update_issuance_rate()
         for (auto it : rate_table) {
             if (now >= time_point::from_iso_string(it.first)) {
                 issuance_rate = it.second;
+            } else {
                 break;
             }
         }

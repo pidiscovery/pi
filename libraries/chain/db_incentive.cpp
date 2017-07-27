@@ -34,7 +34,7 @@ namespace graphene { namespace chain {
         const auto& gpo = get_global_properties();
         auto generate_op = [&] (const construction_capital_object &cc_obj, uint8_t reason) {
             // at most GRAPHENE_DEFAULT_MAX_INCENTIVE_OPERATIONS_PER_BLOCK incentive ops per block
-            if (tx.operations.size() >= GRAPHENE_DEFAULT_MAX_INCENTIVE_OPERATIONS_PER_BLOCK) {
+            if (tx.operations.size() >= gpo.parameters.max_incentive_operations_per_block) {
                 return;
             }
             // pay back save money by period

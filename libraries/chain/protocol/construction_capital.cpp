@@ -28,12 +28,12 @@
 namespace graphene { namespace chain {
 
     void construction_capital_create_operation::validate() const {
-        FC_ASSERT( fee.amount >= 0 );
-        FC_ASSERT( amount >= GRAPHENE_DEFAULT_MIN_CONSTRUCTION_CAPITAL_AMOUNT );
-        FC_ASSERT( period >= GRAPHENE_DEFAULT_MIN_CONSTRUCTION_CAPITAL_PERIOD 
-            &&  period <= GRAPHENE_DEFAULT_MAX_CONSTRUCTION_CAPITAL_PERIOD);
-        FC_ASSERT( total_periods >= GRAPHENE_DEFAULT_MIN_CONSTRUCTION_CAPITAL_PERIOD_LEN 
-            &&  total_periods <= GRAPHENE_DEFAULT_MAX_CONSTRUCTION_CAPITAL_PERIOD_LEN );
+        // FC_ASSERT( fee.amount >= 0 );
+        // FC_ASSERT( amount >= GRAPHENE_DEFAULT_MIN_CONSTRUCTION_CAPITAL_AMOUNT );
+        // FC_ASSERT( period >= GRAPHENE_DEFAULT_MIN_CONSTRUCTION_CAPITAL_PERIOD 
+        //     &&  period <= GRAPHENE_DEFAULT_MAX_CONSTRUCTION_CAPITAL_PERIOD);
+        // FC_ASSERT( total_periods >= GRAPHENE_DEFAULT_MIN_CONSTRUCTION_CAPITAL_PERIOD_LEN 
+        //     &&  total_periods <= GRAPHENE_DEFAULT_MAX_CONSTRUCTION_CAPITAL_PERIOD_LEN );
     }
 
     void construction_capital_vote_operation::validate() const {

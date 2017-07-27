@@ -77,6 +77,16 @@ class incentive_history_plugin_impl {
                 ccho.period = obj.period;
                 ccho.total_periods = obj.total_periods;
                 ccho.timestamp = obj.timestamp;
+                ccho.left_vote_point = obj.left_vote_point;
+                ccho.left_vote_time = (
+                    uint128(obj.period) 
+                    * obj.left_vote_point 
+                    * uint128(1000000) 
+                    / (uint128(obj.total_periods) 
+                        * uint128(obj.amount.value) 
+                        * uint128(obj.period))
+                    ).to_uint64() 
+                    / 1000000;
                 ccho.next_slot = obj.next_slot;
                 ccho.achieved = obj.achieved;
             } else {
@@ -86,35 +96,41 @@ class incentive_history_plugin_impl {
             }
         }
 
+        void update_construction_capital_history_object(construction_capital_history_object &ccho) {
+            // initialize construction_capital_history_object by record of construction_capital_object
+            const auto& idx = database().get_index_type<construction_capital_index>().indices().get<by_id>();
+            auto it = idx.find(ccho.ccid);
+            if (it != idx.end()) {
+                auto &obj = *it;
+                ccho.left_vote_point = obj.left_vote_point;
+                ccho.left_vote_time = (
+                    uint128(obj.period) 
+                    * obj.left_vote_point 
+                    * uint128(1000000) 
+                    / (uint128(obj.total_periods) 
+                        * uint128(obj.amount.value) 
+                        * uint128(obj.period))
+                    ).to_uint64() 
+                    / 1000000;
+                ccho.next_slot = obj.next_slot;
+                ccho.achieved = obj.achieved;
+            } else {
+                // TODO this is not right when only one total_period, FIX IT LATER
+                wlog("construction capital ${cc} not found", ("cc", ccho.ccid));
+            }
+        }
+        
+
         uint32_t calculate_accelerate(const construction_capital_id_type &cc_from_id, const construction_capital_id_type &cc_to_id) {
             // calculate accelerate time in second by this vote
             const auto& index = database().get_index_type<construction_capital_index>().indices().get<by_id>();
             const auto& cc_to = index.find(cc_to_id);
             const auto& cc_from = index.find(cc_from_id);
-            share_type accelerate_period_amount = cc_to->amount * cc_to->period * cc_to->total_periods;
-            share_type accelerate_got = 0;
-            const auto& index_vote_to = database().get_index_type<construction_capital_vote_index>().indices().get<by_vote_to>();
-            for (auto it = index_vote_to.lower_bound(cc_to_id); it!= index_vote_to.end() && it->cc_to == cc_to_id; ++it) {
-                if (it->cc_from == cc_from_id) {
-                    continue;
-                }
-                auto from_obj_it = index.find(it->cc_from);
-                accelerate_got += from_obj_it->amount * from_obj_it->period * from_obj_it->total_periods;
-            }
-            real128 max_acclerate_real = real128(accelerate_period_amount.value) * real128(cc_to->total_periods * GRAPHENE_DEFAULT_MAX_INCENTIVE_ACCELERATE_RATE) / real128(100);
-            share_type max_acclerate = max_acclerate_real.to_uint64(); 
-            //accelerate has an upper limit, when reached, no accelerate effect take palce
-            if (accelerate_got < max_acclerate) {
-                //calculate incentive accelerate
-                share_type accelerate_amount = cc_from->amount * cc_from->period * cc_from->total_periods;
-                if (accelerate_amount + accelerate_got > max_acclerate) {
-                    accelerate_amount = max_acclerate - accelerate_got;
-                }
-                //total accelerate time
-                real128 total_accl_real = real128(accelerate_amount.value) / real128(accelerate_period_amount.value) * real128(cc_to->period);
-                return total_accl_real.to_uint64();
-            }
-            return 0;
+            uint128 accelerate_period_amount = uint128(cc_to->amount.value) * uint128(cc_to->period) * uint128(cc_to->total_periods);
+            //calculate incentive accelerate
+            uint128 accelerate_amount = uint128(cc_from->amount.value) * uint128(cc_from->period) * uint128(cc_from->total_periods);
+            uint128 acc_scaled = uint128(cc_to->period) * accelerate_period_amount * uint128(1000000) / accelerate_amount;
+            return acc_scaled.to_uint64() / 1000000;
         }
 
 };
@@ -145,6 +161,7 @@ void incentive_history_plugin_impl::update_incentive_histories( const signed_blo
                 });
             } else {
                 db.modify(*itr, [&](construction_capital_history_object &obj) {
+                    update_construction_capital_history_object(obj);
                     obj.incentive.push_back(ir);                    
                 });
             }
@@ -168,6 +185,7 @@ void incentive_history_plugin_impl::update_incentive_histories( const signed_blo
                     });
                 } else {
                     db.modify(*itr, [&](construction_capital_history_object &obj) {
+                        update_construction_capital_history_object(obj);
                         obj.vote_from.push_back(ccvr);
                     });
                 }
@@ -181,6 +199,7 @@ void incentive_history_plugin_impl::update_incentive_histories( const signed_blo
                     });
                 } else {
                     db.modify(*itr, [&](construction_capital_history_object &obj) {
+                        update_construction_capital_history_object(obj);
                         obj.vote_to.push_back(ccvr);
                     });
                 }

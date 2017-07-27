@@ -26,6 +26,7 @@
 #include <graphene/chain/protocol/types.hpp>
 #include <graphene/db/generic_index.hpp>
 #include <boost/multi_index/composite_key.hpp>
+#include <fc/uint128.hpp>
 
 
 namespace graphene { namespace chain {
@@ -50,6 +51,7 @@ namespace graphene { namespace chain {
 
         uint16_t achieved;
         uint16_t pending;
+        fc::uint128 left_vote_point;
         fc::time_point_sec next_slot;
     };
 
@@ -174,6 +176,7 @@ FC_REFLECT_DERIVED( graphene::chain::construction_capital_object,
                     (timestamp)
                     (achieved)
                     (pending)
+                    (left_vote_point)
                     (next_slot)
                 )                    
 
