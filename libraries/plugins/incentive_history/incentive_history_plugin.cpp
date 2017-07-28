@@ -129,7 +129,7 @@ class incentive_history_plugin_impl {
             uint128 accelerate_period_amount = uint128(cc_to->amount.value) * uint128(cc_to->period) * uint128(cc_to->total_periods);
             //calculate incentive accelerate
             uint128 accelerate_amount = uint128(cc_from->amount.value) * uint128(cc_from->period) * uint128(cc_from->total_periods);
-            uint128 acc_scaled = uint128(cc_to->period) * accelerate_period_amount * uint128(1000000) / accelerate_amount;
+            uint128 acc_scaled = uint128(cc_to->period) * accelerate_amount * uint128(1000000) / accelerate_period_amount;
             return acc_scaled.to_uint64() / 1000000;
         }
 
