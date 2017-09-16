@@ -29,6 +29,7 @@
 #include <fc/smart_ref_impl.hpp>
 
 #include <fc/crypto/hex.hpp>
+#include <fc/crypto/base36.hpp>
 
 #include <boost/range/iterator_range.hpp>
 #include <boost/rational.hpp>
@@ -529,6 +530,38 @@ bool database_api_impl::is_public_key_registered(string public_key) const
 
     return is_known;
 }
+    
+optional<public_key_type> database_api::get_public_key_by_name(const string &name)
+{
+    if (name.size() <= 2) {
+        return {};
+    }
+    if (name[0] != 'n') {
+        return {};
+    }
+
+    try {
+        string base36(name.begin() + 1, name.end());
+        auto bdata = fc::from_base36(base36);
+        fc::ecc::public_key_data bkey ;//= fc::from_base36(base36);
+        if (bdata.size() != bkey.size()) {
+            return {};
+        }
+        memcpy(bkey.data, bdata.data(), sizeof(bkey));
+        auto pub_key = fc::ecc::public_key(bkey);
+        return public_key_type(pub_key);
+    } catch (...) {
+        return {};
+    }
+}
+
+string database_api::get_name_by_public_key(public_key_type pub_key)
+{
+    auto key_data = fc::ecc::public_key_data(pub_key);
+    auto base36 = fc::to_base36(key_data.data, key_data.size());
+
+    return "n" + base36;
+}    
 
 //////////////////////////////////////////////////////////////////////
 //                                                                  //

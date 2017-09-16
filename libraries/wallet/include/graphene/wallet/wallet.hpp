@@ -386,6 +386,13 @@ class wallet_api
        */
       account_object                    get_account(string account_name_or_id) const;
 
+      /** Returns id about the given account. 
+       * No exception version
+       * @param account_name_or_id the name or id of the account to provide information about
+       * @returns the public account data stored in the blockchain
+       */      
+      account_id_type                    get_account_id2(string account_name_or_id) const;
+
       /** Returns information about the given asset.
        * @param asset_name_or_id the symbol or id of the asset in question
        * @returns the information about the asset stored in the block chain
@@ -663,6 +670,11 @@ class wallet_api
        */
       string normalize_brain_key(string s) const;
 
+      /** Get accounts referenced by specified key
+       * @param specified public key
+       * @return account ids referenced by the key
+       */
+      vector<account_id_type> get_key_references(public_key_type);
       /** Registers a third party's account on the blockckain.
        *
        * This function is used to register an account for which you do not own the private keys.
@@ -762,6 +774,25 @@ class wallet_api
          auto trx = transfer( from, to, amount, asset_symbol, memo, true );
          return std::make_pair(trx.id(),trx);
       }
+
+      /** Create an account by transfer to a public key
+       * @param from the name or id of the account sending the funds
+       * @param to the public key the new account will use
+       * @param amount the amount to send (in nominal units -- to send half of a BTS, specify 0.5)
+       * @param asset_symbol the symbol or id of the asset to send
+       * @param memo a memo to attach to the transaction.  The memo will be encrypted in the 
+       *             transaction and readable for the receiver.  There is no length limit
+       *             other than the limit imposed by maximum transaction size, but transaction
+       *             increase with transaction size
+       * @param broadcast true to broadcast the transaction on the network
+       * @returns the signed transaction transferring funds
+       */
+      signed_transaction create_account_by_transfer(string from,
+                                  public_key_type to,
+                                  string amount,
+                                  string asset_symbol,
+                                  string memo,
+                                  bool broadcast = false);
 
       /** Create a construction capital.
        * @param account the name or id of the account creating the construction capital
@@ -1596,6 +1627,8 @@ class wallet_api
       fc::signal<void(bool)> lock_changed;
       std::shared_ptr<detail::wallet_api_impl> my;
       void encrypt_keys();
+
+      bool broadcast_transaction(signed_transaction &tx);
 };
 
 } }
@@ -1695,6 +1728,7 @@ FC_API( graphene::wallet::wallet_api,
         (cancel_order)
         (transfer)
         (transfer2)
+        (create_account_by_transfer)
         (create_construction_capital)
         (vote_for_construction_capital)
         (get_construction_capital)
@@ -1732,6 +1766,7 @@ FC_API( graphene::wallet::wallet_api,
         (set_desired_witness_and_committee_member_count)
         (get_account)
         (get_account_id)
+        (get_account_id2)
         (get_asset_id)
         (get_block)
         (get_account_count)
@@ -1744,6 +1779,7 @@ FC_API( graphene::wallet::wallet_api,
         (get_private_key)
         (load_wallet_file)
         (normalize_brain_key)
+        (get_key_references)
         (get_limit_orders)
         (get_call_orders)
         (get_settle_orders)

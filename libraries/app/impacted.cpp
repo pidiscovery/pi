@@ -26,6 +26,8 @@
 #include <graphene/app/impacted.hpp>
 #include <graphene/chain/construction_capital_object.hpp>
 #include <graphene/db/generic_index.hpp>
+#include <fc/crypto/base36.hpp>
+#include <graphene/chain/account_object.hpp>
 
 namespace graphene { namespace app {
 
@@ -247,6 +249,21 @@ struct get_impacted_account_visitor
             }
          }
       }
+   }
+
+   void operator()( const account_create_by_transfer_operation& op) {
+        // TODO  
+        _impacted.insert( op.from );
+        if (_db) {
+            const auto& idx = _db->get_index_type<account_index>().indices().get<by_name>();
+            auto key_data = fc::ecc::public_key_data(op.account_key);
+            auto base36 = fc::to_base36(key_data.data, key_data.size());
+            auto name = "n" + base36;
+            auto itr = idx.find(name);
+            if (itr != idx.end()) {
+                  _impacted.insert( itr->id );
+            }              
+        }
    }
 };
 

@@ -181,6 +181,7 @@ void database::initialize_evaluators()
    register_evaluator<incentive_evaluator>();
    register_evaluator<construction_capital_create_evaluator>();
    register_evaluator<construction_capital_vote_evaluator>();
+   register_evaluator<account_create_by_transfer_evaluator>();
 }
 
 void database::initialize_indexes()

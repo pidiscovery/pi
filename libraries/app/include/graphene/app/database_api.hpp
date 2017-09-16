@@ -180,6 +180,9 @@ class database_api
        */
       optional<signed_transaction> get_recent_transaction_by_id( const transaction_id_type& id )const;
 
+      /*
+       * Get transaction by id, this works only when transaction_record_plugin is enabled.
+       */
       optional<signed_transaction> get_transaction_by_id( const transaction_id_type& id )const;
 
       /////////////
@@ -225,6 +228,16 @@ class database_api
       * @return Whether a public key is known
       */
      bool is_public_key_registered(string public_key) const;
+
+     /**
+      * Convert a account_create_by_transfer format name into public key
+      * @param name the account_create_by_transfer format name
+      * @return the public key the name is, if cannot convert, public_key_type() will be returned
+      */
+     optional<public_key_type> get_public_key_by_name(const string &name);
+
+
+     string get_name_by_public_key(public_key_type pub_key);
 
       //////////////
       // Accounts //
@@ -622,6 +635,8 @@ FC_API(graphene::app::database_api,
    // Keys
    (get_key_references)
    (is_public_key_registered)
+   (get_public_key_by_name)
+   (get_name_by_public_key)
 
    // Accounts
    (get_accounts)

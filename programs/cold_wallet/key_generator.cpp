@@ -34,6 +34,7 @@
 #include <graphene/chain/protocol/types.hpp>
 #include <graphene/chain/protocol/address.hpp>
 #include <graphene/utilities/key_conversion.hpp>
+#include <fc/crypto/base36.hpp>
 
 #include <iostream>
 #include <string>
@@ -87,77 +88,64 @@ std::string rand_seed() {
 }
 
 int main(int argc, char *argv[]) {
-    
-    //int acc_cnt = 1;
-    //if (argc > 1) {
-    //    acc_cnt = std::stoi(argv[1]);
-    //}
-    
-    //for (int i = 0; i < acc_cnt; i++) {
-        auto seed = rand_seed();
-        auto name = rand_name();
-        auto key = fc::ecc::private_key::regenerate(fc::sha256::hash(seed));
-        auto pub_key = key.get_public_key();
-        auto bts_pub_key = public_key_type(pub_key);
+	auto seed = rand_seed();
+	
+	auto key = fc::ecc::private_key::regenerate(fc::sha256::hash(seed));
+	auto pub_key = key.get_public_key();
+	auto bts_pub_key = public_key_type(pub_key);
 
-        std::cout << key_to_wif(key)
-            << "\t" << std::string(bts_pub_key)
-            << "\t" << std::string(address(pub_key))
-            << "\t" << seed
-            << "\t" << name
-            << std::endl;
+	auto key_data = pub_key.serialize();
+	auto base36 = fc::to_base36(key_data.data, key_data.size());
+	auto name = "n" + base36;
 
-		std::string public_path = "public_key";
-		std::string private_path = "private_key";
-		std::string suffix = ".txt";
-		int i = 0;
-		while (1)
-		{
-			std::ofstream pub_file;
-			std::ofstream pri_file;
-			if (i == 0)
-			{
-				pub_file.open(public_path + suffix, std::ios::_Nocreate);
-				pri_file.open(private_path + suffix, std::ios::_Nocreate);
-			}
-			else
-			{
-				pub_file.open(public_path + "_" + std::to_string(i) + suffix, std::ios::_Nocreate);
-				pri_file.open(private_path + "_" + std::to_string(i) + suffix, std::ios::_Nocreate);
-			}
-			
-			if (!pub_file.is_open() && !pri_file.is_open())
-			{
-				break;
-			}
-			i++;
-		}
-
-		std::ofstream pub_file;
-		std::ofstream pri_file;
+	std::string wallet_path = "wallet";
+	std::string suffix = ".txt";
+	int i = 0;
+	while (1)
+	{
+		std::ofstream wallet_file;
 		if (i == 0)
 		{
-			pub_file.open(public_path + suffix, std::ios::out);
-			pri_file.open(private_path + suffix, std::ios::out);
+			wallet_file.open(wallet_path + suffix, std::ios::in);
 		}
 		else
 		{
-			pub_file.open(public_path + "_" + std::to_string(i) + suffix, std::ios::out);
-			pri_file.open(private_path + "_" + std::to_string(i) + suffix, std::ios::out);
+			wallet_file.open(wallet_path + "_" + std::to_string(i) + suffix, std::ios::in);
 		}
-		if (pub_file.is_open())
+		
+		if (!wallet_file.is_open())
 		{
-			pub_file << std::string(name) << "\n";
-			pub_file << std::string(bts_pub_key);
-			pub_file.close();
+			break;
 		}
-		if (pri_file.is_open())
-		{
-			pri_file << std::string(name) << "\n";
-			pri_file << key_to_wif(key);
-			pri_file.close();
-		}
-    //}
-    
+		i++;
+	}
+
+	std::string wallet_file_name;
+	std::ofstream wallet_file;
+	if (i == 0)
+	{
+		wallet_file_name = wallet_path + suffix;
+	}
+	else
+	{
+		wallet_file_name = wallet_path + "_" + std::to_string(i) + suffix;
+	}
+	wallet_file.open(wallet_file_name, std::ios::out);
+	
+	if (wallet_file.is_open())
+	{
+		wallet_file << std::string(name) << "\n";
+		wallet_file << std::string(bts_pub_key) << "\n";
+		wallet_file << key_to_wif(key) << "\n";
+		wallet_file.close();
+
+		std::cout << "Keys are saved to file " << wallet_file_name << std::endl << std::endl
+			<< "You Cold Wallet Keys:\n"
+			<< "\tName: " << name << std::endl
+			<< "\tPublick Key: " << std::string(bts_pub_key) << std::endl
+			<< "\tPrivate Key: " << key_to_wif(key) << std::endl
+			<< "Use your name and public key active online.\n" << std::endl << std::endl
+			<< "Do not tell anyone your private key!" << std::endl << std::endl;
+	}
     return 0;
 }

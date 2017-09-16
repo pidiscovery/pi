@@ -69,4 +69,13 @@ public:
    const account_object* listed_account;
 };
 
+class account_create_by_transfer_evaluator : public evaluator<account_create_by_transfer_evaluator>
+{
+    public:
+        typedef account_create_by_transfer_operation operation_type;
+
+        void_result do_evaluate( const account_create_by_transfer_operation& o );
+        void_result do_apply( const account_create_by_transfer_operation& o );
+};
+
 } } // graphene::chain

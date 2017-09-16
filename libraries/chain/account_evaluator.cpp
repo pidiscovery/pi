@@ -34,6 +34,8 @@
 #include <graphene/chain/special_authority.hpp>
 #include <graphene/chain/special_authority_object.hpp>
 #include <graphene/chain/worker_object.hpp>
+#include <graphene/chain/is_authorized_asset.hpp>
+#include <fc/crypto/base36.hpp>
 
 #include <algorithm>
 
@@ -405,5 +407,100 @@ void_result account_upgrade_evaluator::do_apply(const account_upgrade_evaluator:
 
    return {};
 } FC_RETHROW_EXCEPTIONS( error, "Unable to upgrade account '${a}'", ("a",o.account_to_upgrade(db()).name) ) }
+
+void_result account_create_by_transfer_evaluator::do_evaluate( const account_create_by_transfer_operation& op )
+{ try {
+   
+   const database& d = db();
+
+   const account_object& from_account    = op.from(d);
+   const asset_object&   asset_type      = op.amount.asset_id(d);
+
+   try {
+      // auto generated account name must not exist
+      auto key_data = fc::ecc::public_key_data(op.account_key);
+      auto base36 = fc::to_base36(key_data.data, key_data.size());
+      string name = "n" + base36;
+      auto& acnt_indx = d.get_index_type<account_index>();
+      auto current_account_itr = acnt_indx.indices().get<by_name>().find( name );
+      FC_ASSERT(
+         current_account_itr == acnt_indx.indices().get<by_name>().end(),
+         "auto generated account name: ${name}, already used.",
+         ("name", name)
+      );
+
+      GRAPHENE_ASSERT(
+         is_authorized_asset( d, from_account, asset_type ),
+         transfer_from_account_not_whitelisted,
+         "'from' account ${from} is not whitelisted for asset ${asset}",
+         ("from",op.from)
+         ("asset",op.amount.asset_id)
+         );
+
+      if( asset_type.is_transfer_restricted() )
+      {
+         GRAPHENE_ASSERT(
+            from_account.id == asset_type.issuer,
+            transfer_restricted_transfer_asset,
+            "Asset {asset} has transfer_restricted flag enabled",
+            ("asset", op.amount.asset_id)
+          );
+      }
+
+      bool insufficient_balance = d.get_balance( from_account, asset_type ).amount >= op.amount.amount;
+      FC_ASSERT( insufficient_balance,
+                 "Insufficient Balance: ${balance}, unable to transfer '${total_transfer}' from account '${a}' to '${t}'", 
+                 ("a",from_account.name)("t",op.account_key)("total_transfer",d.to_pretty_string(op.amount))("balance",d.to_pretty_string(d.get_balance(from_account, asset_type))) );
+
+      return void_result();
+   } FC_RETHROW_EXCEPTIONS( error, "Unable to create by transfer ${a} from ${f} to ${t}", ("a",d.to_pretty_string(op.amount))("f",op.from(d).name)("t",op.account_key) );
+
+}  FC_CAPTURE_AND_RETHROW( (op) ) }
+
+void_result account_create_by_transfer_evaluator::do_apply( const account_create_by_transfer_operation& o )
+{ try {
+   database& d = db();
+   const auto& new_acnt_object = db().create<account_object>( [&]( account_object& obj ){
+         const account_object& from_account = o.from(d);
+         if (from_account.is_lifetime_member()) {
+            obj.registrar = o.from;
+            obj.referrer = o.from;
+            obj.lifetime_referrer = o.from;
+         } else {
+            obj.registrar = GRAPHENE_NULL_ACCOUNT;
+            obj.referrer = GRAPHENE_NULL_ACCOUNT;
+            obj.lifetime_referrer = GRAPHENE_NULL_ACCOUNT;
+         }
+         auto& params = db().get_global_properties().parameters;
+         obj.network_fee_percentage = params.network_percent_of_fee;
+         obj.lifetime_referrer_fee_percentage = params.lifetime_referrer_percent_of_fee;
+         obj.referrer_rewards_percentage = 0;
+
+         auto key_data = fc::ecc::public_key_data(o.account_key);
+         auto base36 = fc::to_base36(key_data.data, key_data.size());
+         obj.name             = "n" + base36;
+
+         obj.owner            = authority(1, o.account_key, 1);
+         obj.active           = authority(1, o.account_key, 1);
+         obj.options.memo_key = o.account_key;
+         obj.statistics = db().create<account_statistics_object>([&](account_statistics_object& s){s.owner = obj.id;}).id;         
+   });
+
+   const auto& dynamic_properties = db().get_dynamic_global_properties();
+   db().modify(dynamic_properties, [](dynamic_global_property_object& p) {
+      ++p.accounts_registered_this_interval;
+   });
+
+   const auto& global_properties = db().get_global_properties();
+   if( dynamic_properties.accounts_registered_this_interval %
+       global_properties.parameters.accounts_per_fee_scale == 0 )
+      db().modify(global_properties, [&dynamic_properties](global_property_object& p) {
+         p.parameters.current_fees->get<account_create_operation>().basic_fee <<= p.parameters.account_fee_scale_bitshifts;
+      });
+
+   db().adjust_balance( o.from, -o.amount );
+   db().adjust_balance( new_acnt_object.id, o.amount );
+   return void_result();
+} FC_CAPTURE_AND_RETHROW( (o) ) }
 
 } } // graphene::chain

@@ -457,6 +457,69 @@ namespace graphene { namespace app {
        return result;
     }
     
+    vector<operation_history_object> history_api::get_account_history_operations( account_id_type account, 
+                                                                       int operation_id,
+                                                                       operation_history_id_type start, 
+                                                                       operation_history_id_type stop,
+                                                                       unsigned limit) const
+    {
+       FC_ASSERT( _app.chain_database() );
+       const auto& db = *_app.chain_database();
+       FC_ASSERT( limit <= 100 );
+       vector<operation_history_object> result;
+       const auto& stats = account(db).statistics(db);
+       if( stats.most_recent_op == account_transaction_history_id_type() ) return result;
+       const account_transaction_history_object* node = &stats.most_recent_op(db);
+       if( start == operation_history_id_type() )
+          start = node->operation_id;
+
+       while(node && node->operation_id.instance.value > stop.instance.value && result.size() < limit)
+       {
+          if( node->operation_id.instance.value <= start.instance.value ) {
+
+             if(node->operation_id(db).op.which() == operation_id)
+               result.push_back( node->operation_id(db) );
+             }
+          if( node->next == account_transaction_history_id_type() )
+             node = nullptr;
+          else node = &node->next(db);
+       }
+       return result;
+    }
+
+    vector<operation_history_object> history_api::get_account_history_operations2( account_id_type account, 
+                                                                       vector<int> operation_ids,
+                                                                       operation_history_id_type start, 
+                                                                       operation_history_id_type stop,
+                                                                       unsigned limit) const
+    {
+       FC_ASSERT( _app.chain_database() );
+       const auto& db = *_app.chain_database();
+       FC_ASSERT( limit <= 100 );
+       vector<operation_history_object> result;
+       const auto& stats = account(db).statistics(db);
+       if( stats.most_recent_op == account_transaction_history_id_type() ) return result;
+       const account_transaction_history_object* node = &stats.most_recent_op(db);
+       if( start == operation_history_id_type() )
+          start = node->operation_id;
+
+       set<int> filter_operations(operation_ids.begin(), operation_ids.end());
+
+       while(node && node->operation_id.instance.value > stop.instance.value && result.size() < limit)
+       {
+          if( node->operation_id.instance.value <= start.instance.value ) {
+             int operation_id = node->operation_id(db).op.which();
+             if ( filter_operations.find(operation_id) != filter_operations.end() )
+               result.push_back( node->operation_id(db) );
+             }
+          if( node->next == account_transaction_history_id_type() )
+             node = nullptr;
+          else node = &node->next(db);
+       }
+       return result;
+    }    
+
+
     vector<operation_history_object> history_api::get_relative_account_history( account_id_type account, 
                                                                                 uint32_t stop, 
                                                                                 unsigned limit, 
@@ -466,22 +529,28 @@ namespace graphene { namespace app {
        const auto& db = *_app.chain_database();
        FC_ASSERT(limit <= 100);
        vector<operation_history_object> result;
+       const auto& stats = account(db).statistics(db);
        if( start == 0 )
-         start = account(db).statistics(db).total_ops;
-       else start = min( account(db).statistics(db).total_ops, start );
-       const auto& hist_idx = db.get_index_type<account_transaction_history_index>();
-       const auto& by_seq_idx = hist_idx.indices().get<by_seq>();
-       
-       auto itr = by_seq_idx.upper_bound( boost::make_tuple( account, start ) );
-       auto itr_stop = by_seq_idx.lower_bound( boost::make_tuple( account, stop ) );
-       --itr;
-       
-       while ( itr != itr_stop && result.size() < limit )
+          start = stats.total_ops;
+       else
+          start = min( stats.total_ops, start );
+
+
+       if( start >= stop && start > stats.removed_ops && limit > 0 )
        {
-          result.push_back( itr->operation_id(db) );
-          --itr;
+          const auto& hist_idx = db.get_index_type<account_transaction_history_index>();
+          const auto& by_seq_idx = hist_idx.indices().get<by_seq>();
+
+          auto itr = by_seq_idx.upper_bound( boost::make_tuple( account, start ) );
+          auto itr_stop = by_seq_idx.lower_bound( boost::make_tuple( account, stop ) );
+         
+          do
+          {
+             --itr;
+             result.push_back( itr->operation_id(db) );
+          }
+          while ( itr != itr_stop && result.size() < limit );
        }
-       
        return result;
     }
 

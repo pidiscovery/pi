@@ -28,6 +28,7 @@
 #include <graphene/chain/protocol/special_authority.hpp>
 #include <graphene/chain/protocol/types.hpp>
 #include <graphene/chain/protocol/vote.hpp>
+#include <graphene/chain/protocol/memo.hpp>
 
 namespace graphene { namespace chain {
 
@@ -261,6 +262,48 @@ namespace graphene { namespace chain {
       void        validate()const;
    };
 
+
+   /**
+    * @ingroup operations
+    *
+    * @brief create an account by sending some asset
+    *
+    *  Fees are paid by the "from" account
+    *  
+    *
+    *  @pre amount.amount > 0
+    *  @pre fee.amount >= 0
+    *  @pre from != to
+    *  @post from account's balance will be reduced by fee and amount
+    *  @post to account's balance will be increased by amount
+    *  @return n/a
+    */
+   struct account_create_by_transfer_operation : public base_operation
+   {
+      struct fee_parameters_type {
+         uint64_t fee       = 0.01 * GRAPHENE_BLOCKCHAIN_PRECISION;
+         uint32_t price_per_kbyte = 0.001 * GRAPHENE_BLOCKCHAIN_PRECISION; /// only required for large memos.
+      };
+
+      asset            fee;
+      /// Account to transfer asset from
+      account_id_type  from;
+      /// Account to transfer asset to
+      // account_id_type  to;
+      public_key_type  account_key;
+      /// The amount of asset to transfer from @ref from to @ref to
+      asset            amount;
+
+      /// User provided data encrypted to the memo key of the "to" account
+      optional<memo_data> memo;
+      extensions_type   extensions;
+
+      account_id_type fee_payer()const { return from; }
+      void            validate()const;
+      share_type      calculate_fee(const fee_parameters_type& k)const;
+   };
+
+
 } } // graphene::chain
 
 FC_REFLECT(graphene::chain::account_options, (memo_key)(voting_account)(num_witness)(num_committee)(votes)(extensions))
@@ -291,3 +334,6 @@ FC_REFLECT( graphene::chain::account_upgrade_operation::fee_parameters_type, (me
 FC_REFLECT( graphene::chain::account_transfer_operation::fee_parameters_type, (fee) )
 
 FC_REFLECT( graphene::chain::account_transfer_operation, (fee)(account_id)(new_owner)(extensions) )
+
+FC_REFLECT( graphene::chain::account_create_by_transfer_operation::fee_parameters_type, (fee)(price_per_kbyte) )
+FC_REFLECT( graphene::chain::account_create_by_transfer_operation, (fee)(from)(account_key)(amount)(memo)(extensions) )

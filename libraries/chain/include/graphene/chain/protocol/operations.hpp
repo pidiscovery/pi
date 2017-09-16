@@ -98,7 +98,8 @@ namespace graphene { namespace chain {
             construction_capital_create_operation,
             construction_capital_vote_operation,
             committee_member_issue_construction_capital_operation,
-            committee_member_grant_instant_payback_operation
+            committee_member_grant_instant_payback_operation,
+            account_create_by_transfer_operation
          > operation;
 
    /// @} // operations group
