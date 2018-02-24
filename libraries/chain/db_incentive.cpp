@@ -25,6 +25,7 @@
 #include <graphene/chain/database.hpp>
 #include <graphene/chain/protocol/incentive.hpp>
 #include <fc/real128.hpp>
+#include <graphene/chain/construction_capital_object.hpp>
 
 using namespace fc;
 

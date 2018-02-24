@@ -136,6 +136,8 @@ namespace graphene { namespace chain {
       balance_object_type,
       construction_capital_object_type,
       construction_capital_vote_object_type,
+      limit_order_fee_config_object_type,
+      construction_capital_rate_vote_object_type,
       OBJECT_TYPE_COUNT ///< Sentry value which contains the number of different object types
    };
 
@@ -179,12 +181,15 @@ namespace graphene { namespace chain {
    class blinded_balance_object;
    class construction_capital_object;
    class construction_capital_vote_object;
+   class limit_order_fee_config_object;
+   class construction_capital_rate_vote_object;
 
    typedef object_id< protocol_ids, account_object_type,            account_object>               account_id_type;
    typedef object_id< protocol_ids, asset_object_type,              asset_object>                 asset_id_type;
    typedef object_id< protocol_ids, force_settlement_object_type,   force_settlement_object>      force_settlement_id_type;
-   typedef object_id< protocol_ids, committee_member_object_type,           committee_member_object>              committee_member_id_type;
+   typedef object_id< protocol_ids, committee_member_object_type,   committee_member_object>      committee_member_id_type;
    typedef object_id< protocol_ids, witness_object_type,            witness_object>               witness_id_type;
+   typedef object_id< protocol_ids, limit_order_fee_config_object_type, limit_order_fee_config_object>   limit_order_fee_config_id_type;
    typedef object_id< protocol_ids, limit_order_object_type,        limit_order_object>           limit_order_id_type;
    typedef object_id< protocol_ids, call_order_object_type,         call_order_object>            call_order_id_type;
    typedef object_id< protocol_ids, custom_object_type,             custom_object>                custom_id_type;
@@ -196,6 +201,7 @@ namespace graphene { namespace chain {
    typedef object_id< protocol_ids, balance_object_type,            balance_object>               balance_id_type;
    typedef object_id< protocol_ids, construction_capital_object_type,   construction_capital_object> construction_capital_id_type;
    typedef object_id< protocol_ids, construction_capital_vote_object_type, construction_capital_vote_object >    construction_capital_vote_id_type;
+   typedef object_id< protocol_ids, construction_capital_rate_vote_object_type, construction_capital_rate_vote_object >    construction_capital_rate_vote_id_type;
    // implementation types
    class global_property_object;
    class dynamic_global_property_object;
@@ -347,6 +353,7 @@ FC_REFLECT_ENUM( graphene::chain::object_type,
                  (balance_object_type)
                  (construction_capital_object_type)
                  (construction_capital_vote_object_type)
+                 (construction_capital_rate_vote_object_type)
                  (OBJECT_TYPE_COUNT)
                )
 FC_REFLECT_ENUM( graphene::chain::impl_object_type,

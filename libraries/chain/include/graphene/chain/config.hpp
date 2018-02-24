@@ -189,3 +189,4 @@
 #define GRAPHENE_ISSUANCE_RATE_SCALE                                100000000
 #define GRAPHENE_DEFAULT_ISSUANCE_RATE                              104285714
 #define GRAPHENE_DEFAULT_INSTANT_PAYBACL_RATE                       15000000
+#define GRAPHENE_EXCHANGE_RATE_SCALE                                10000000

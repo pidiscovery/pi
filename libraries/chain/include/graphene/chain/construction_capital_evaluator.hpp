@@ -43,4 +43,12 @@ namespace graphene { namespace chain {
         void_result do_evaluate( const construction_capital_vote_operation& o );
         void_result do_apply( const construction_capital_vote_operation& o );
     }; 
+
+    class construction_capital_rate_vote_evaluator : public evaluator<construction_capital_rate_vote_evaluator> {
+    public:
+        typedef construction_capital_rate_vote_operation operation_type;
+
+        void_result do_evaluate( const construction_capital_rate_vote_operation& o );
+        void_result do_apply( const construction_capital_rate_vote_operation& o );
+    };     
 } } // graphene::chain

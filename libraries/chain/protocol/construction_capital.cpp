@@ -39,5 +39,7 @@ namespace graphene { namespace chain {
     void construction_capital_vote_operation::validate() const {
     }
     
-
+    void construction_capital_rate_vote_operation::validate() const {
+    }
+    
 }} // graphene::chain

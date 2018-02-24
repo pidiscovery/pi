@@ -69,9 +69,30 @@ namespace graphene { namespace chain {
         }
     };
 
+   /**
+    * @ingroup operations
+    * @brief Vote other's construction capital to incentive their incentive speed
+    */  
+    struct construction_capital_rate_vote_operation : public base_operation {
+        struct fee_parameters_type { uint64_t fee = 0; };
+        asset           fee;
+        account_id_type account_id;
+        uint8_t vote_option;
+        account_id_type fee_payer() const { 
+            return account_id;
+        }
+        void validate() const;
+        share_type calculate_fee(const fee_parameters_type& k ) const {
+            return k.fee;
+        }
+    };
 }} // graphene::chain
 
 FC_REFLECT( graphene::chain::construction_capital_create_operation::fee_parameters_type, (fee) )
 FC_REFLECT( graphene::chain::construction_capital_create_operation, (fee)(account_id)(amount)(period)(total_periods) )
+
 FC_REFLECT( graphene::chain::construction_capital_vote_operation::fee_parameters_type, (fee) )
 FC_REFLECT( graphene::chain::construction_capital_vote_operation, (fee)(account_id)(cc_from)(cc_to) )
+
+FC_REFLECT( graphene::chain::construction_capital_rate_vote_operation::fee_parameters_type, (fee) )
+FC_REFLECT( graphene::chain::construction_capital_rate_vote_operation, (fee)(account_id)(vote_option) )

@@ -182,4 +182,34 @@ namespace graphene { namespace chain {
             return void_result();
     } FC_CAPTURE_AND_RETHROW( (op) ) }
 
+    void_result construction_capital_rate_vote_evaluator::do_evaluate( const construction_capital_rate_vote_operation& op ) {
+        try {
+            FC_ASSERT(
+                op.vote_option == 0 || op.vote_option == 1 | op.vote_option == 2,
+                "Unknow vote option: ${vote_option}, ${account}",
+                ("account", op.account_id(db()).name)
+                ("vote_option", op.vote_option)
+            );
+            return void_result();
+    } FC_CAPTURE_AND_RETHROW( (op) ) }
+
+    void_result construction_capital_rate_vote_evaluator::do_apply( const construction_capital_rate_vote_operation& op ) {
+        try {
+            const auto& index = db().get_index_type<construction_capital_rate_vote_index>().indices().get<by_account>();
+            const auto& ccrv = index.find(op.account_id);
+            if (ccrv == index.end()) {
+                db().create<construction_capital_rate_vote_object>([&](construction_capital_rate_vote_object &obj){
+                    obj.account = op.account_id;
+                    obj.vote_option = op.vote_option;
+                    obj.timestamp = db().head_block_time();
+                });
+            } else {
+                db().modify(*ccrv, [&](construction_capital_rate_vote_object &obj){
+                    obj.vote_option = op.vote_option;
+                    obj.timestamp = db().head_block_time();
+                });
+            }
+            return void_result();
+    } FC_CAPTURE_AND_RETHROW( (op) ) }
+
 } } // graphene::chain

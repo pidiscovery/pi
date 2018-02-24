@@ -161,6 +161,15 @@ string address_to_shorthash( const address& addr )
    return result;
 }
 
+string round_amout_string(const std::string& amount) {
+    string result = amount;
+    const auto pos = amount.find( '.' );
+    if (pos != string::npos && amount.substr(pos, string::npos).length() > 5) {
+        return amount.substr(0, pos+6);
+    }
+    return amount;
+}
+
 fc::ecc::private_key derive_private_key( const std::string& prefix_string,
                                          int sequence_number )
 {
@@ -1865,6 +1874,40 @@ public:
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (account)(amount)(period)(total_periods)(broadcast) ) }
 
+   signed_transaction set_exchange_fee_conf(    string account, 
+                                    string asset_symbol_a,
+                                    int32_t rate_a, 
+                                    string asset_symbol_b,
+                                    int32_t rate_b, 
+                                    bool broadcast)
+   { try {
+      account_object owner_account = get_account(account);
+      fc::ecc::private_key active_private_key = get_private_key_for_account(owner_account);
+      asset_object asset_a = get_asset(asset_symbol_a);
+      asset_object asset_b = get_asset(asset_symbol_b);
+      limit_order_fee_config_operation op;
+      op.receiver = owner_account.id;
+      op.asset_a = asset_a.get_id();
+      op.rate_a = rate_a;
+      op.asset_b = asset_b.get_id();
+      op.rate_b = rate_b;
+      signed_transaction tx;
+      tx.operations.push_back( op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      tx.validate();
+      
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (account)(asset_symbol_a)(rate_a)(asset_symbol_b)(rate_b)(broadcast) ) }   
+
+   pair<uint32_t, uint32_t> get_exchage_fee_rate(string account, string asset_symbol_a, string asset_symbol_b)
+   {
+       asset_object asset_a = get_asset(asset_symbol_a);
+       asset_object asset_b = get_asset(asset_symbol_b);
+
+       account_object query_account = get_account(account);
+       return _remote_db->get_exchange_fee_rate(query_account.id, asset_a.get_id(), asset_b.get_id());
+   }
+
    signed_transaction vote_for_construction_capital(string account, 
                                                 construction_capital_id_type cc_from,
                                                 construction_capital_id_type cc_to,
@@ -1883,6 +1926,24 @@ public:
        tx.validate();
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (account)(cc_from)(cc_to)(broadcast) ) }
+
+    signed_transaction vote_for_construction_capital_rate( string account, 
+                                                    uint8_t option, 
+                                                    bool broadcast = false
+                                            ) 
+   { try {
+       account_object owner_account = get_account(account);
+       fc::ecc::private_key active_private_key = get_private_key_for_account(owner_account);
+       construction_capital_rate_vote_operation op;
+       op.account_id = owner_account.id;
+       op.vote_option = option;
+       
+       signed_transaction tx;
+       tx.operations.push_back( op );
+       set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+       tx.validate();
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (account)(option)(broadcast) ) }
 
    bool broadcast_transaction(signed_transaction &tx) {
       _remote_net_broadcast->broadcast_transaction( tx );
@@ -2038,6 +2099,8 @@ public:
 
       limit_order_create_operation op;
       op.seller = seller.id;
+      amount_to_sell = round_amout_string(amount_to_sell);
+      min_to_receive = round_amout_string(min_to_receive);
       op.amount_to_sell = get_asset(symbol_to_sell).amount_from_string(amount_to_sell);
       op.min_to_receive = get_asset(symbol_to_receive).amount_from_string(min_to_receive);
       if( timeout_sec )
@@ -2206,6 +2269,23 @@ signed_transaction create_account_by_transfer(string from,
       };
 
       m["get_account_history"] = [this](variant result, const fc::variants& a)
+      {
+         auto r = result.as<vector<operation_detail>>();
+         std::stringstream ss;
+
+         for( operation_detail& d : r )
+         {
+            operation_history_object& i = d.op;
+            auto b = _remote_db->get_block_header(i.block_num);
+            FC_ASSERT(b);
+            ss << b->timestamp.to_iso_string() << " ";
+            i.op.visit(operation_printer(ss, *this, i.result));
+            ss << " \n";
+         }
+
+         return ss.str();
+      };
+      m["get_relative_account_history"] = [this](variant result, const fc::variants& a)
       {
          auto r = result.as<vector<operation_detail>>();
          std::stringstream ss;
@@ -3049,10 +3129,34 @@ vector<operation_detail> wallet_api::get_account_history(string name, int limit)
    return result;
 }
 
-
-vector<bucket_object> wallet_api::get_market_history( string symbol1, string symbol2, uint32_t bucket )const
+vector<operation_detail> wallet_api::get_relative_account_history(string name, uint32_t stop, int limit, uint32_t start)const
 {
-   return my->_remote_hist->get_market_history( get_asset_id(symbol1), get_asset_id(symbol2), bucket, fc::time_point_sec(), fc::time_point::now() );
+   
+   FC_ASSERT( start > 0 || limit <= 100 );
+   
+   vector<operation_detail> result;
+   auto account_id = get_account(name).get_id();
+
+   while( limit > 0 )
+   {
+      vector <operation_history_object> current = my->_remote_hist->get_relative_account_history(account_id, stop, std::min<uint32_t>(100, limit), start);
+      for (auto &o : current) {
+         std::stringstream ss;
+         auto memo = o.op.visit(detail::operation_printer(ss, *my, o.result));
+         result.push_back(operation_detail{memo, ss.str(), o});
+      }
+      if (current.size() < std::min<uint32_t>(100, limit))
+         break;
+      limit -= current.size();
+      start -= 100;
+      if( start == 0 ) break;
+   }
+   return result;
+}
+
+vector<bucket_object> wallet_api::get_market_history( string symbol1, string symbol2, uint32_t bucket , fc::time_point_sec start, fc::time_point_sec end )const
+{
+   return my->_remote_hist->get_market_history( get_asset_id(symbol1), get_asset_id(symbol2), bucket, start, end );
 }
 
 vector<limit_order_object> wallet_api::get_limit_orders(string a, string b, uint32_t limit)const
@@ -3614,6 +3718,21 @@ signed_transaction wallet_api::create_construction_capital(string account, strin
    return my->create_construction_capital(account, amount, period, total_periods, broadcast);
 }
 
+signed_transaction wallet_api::set_exchange_fee_conf(string account, 
+                                    string asset_symbol_a,
+                                    int32_t rate_a, 
+                                    string asset_symbol_b,
+                                    int32_t rate_b, 
+                                    bool broadcast) 
+{
+    return my->set_exchange_fee_conf(account, asset_symbol_a, rate_a, asset_symbol_b, rate_b, broadcast);
+}
+
+pair<uint32_t,uint32_t> wallet_api::get_exchage_fee_rate(string account, string asset_symbol_a, string asset_symbol_b)
+{
+    return my->get_exchage_fee_rate(account, asset_symbol_a, asset_symbol_b);
+}
+
 signed_transaction wallet_api::vote_for_construction_capital(string account, const string& cc_from, const string& cc_to, bool broadcast) 
 {
     auto from_id = detail::maybe_id<construction_capital_id_type>(cc_from);
@@ -3626,6 +3745,14 @@ signed_transaction wallet_api::vote_for_construction_capital(string account, con
     {
         FC_THROW("Invalide construction capital id - ${cc_from} | ${cc_to}", ("cc_from", cc_from)("cc_to", cc_to));
     }
+}
+
+signed_transaction wallet_api::vote_for_construction_capital_rate( string account, 
+                                                uint8_t option, 
+                                                bool broadcast
+                                        ) 
+{
+    return my->vote_for_construction_capital_rate(account, option, broadcast);
 }
 
 construction_capital_object wallet_api::get_construction_capital(const string& id_str) 
@@ -3665,6 +3792,26 @@ vector<construction_capital_vote_object> wallet_api::get_construction_capital_vo
     else 
     {
         FC_THROW("No construction capital with id- ${id}", ("id", id_str));
+    }
+}
+
+construction_capital_rate_vote_object wallet_api::get_construction_capital_rate_vote( const string& id_str )
+{
+    fc::optional<construction_capital_rate_vote_object> obj;
+    if ( auto id = detail::maybe_id<account_id_type>(id_str) )
+    {
+        obj = my->_remote_db->get_construction_capital_rate_vote(*id);
+    }
+    else 
+    {
+        obj = my->_remote_db->get_construction_capital_rate_vote(get_account(id_str).id);
+    }
+    if (obj) {
+        return *obj;
+    } 
+    else
+    {
+        FC_THROW("No construction capital rate vote with account- ${id}", ("id", id_str));
     }
 }
 

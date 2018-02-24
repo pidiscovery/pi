@@ -162,6 +162,14 @@ class database_api
       optional<block_header> get_block_header(uint32_t block_num)const;
 
       /**
+      * @brief Retrieve multiple block header by block numbers
+      * @param block_num vector containing heights of the block whose header should be returned
+      * @return array of headers of the referenced blocks, or null if no matching block was found
+      */
+      map<uint32_t, optional<block_header>> get_block_header_batch(const vector<uint32_t> block_nums)const;
+
+
+      /**
        * @brief Retrieve a full, signed block
        * @param block_num Height of the block to be returned
        * @return the referenced block, or null if no matching block was found
@@ -358,6 +366,15 @@ class database_api
        * @return The limit orders, ordered from least price to greatest
        */
       vector<limit_order_object> get_limit_orders(asset_id_type a, asset_id_type b, uint32_t limit)const;
+
+      /**
+       * @brief Get limit orders exchange fee rate
+       * @param account ID of exchange account
+       * @param a asset type a
+       * @param b asset type b
+       * @return fee rate of the specefied asset pair
+       */
+      pair<uint32_t, uint32_t> get_exchange_fee_rate(account_id_type account, asset_id_type a, asset_id_type b)const;
 
       /**
        * @brief Get call orders in a given asset
@@ -595,6 +612,7 @@ class database_api
       fc::optional<construction_capital_object> get_construction_capital( construction_capital_id_type id )const;
       vector<construction_capital_vote_object> get_construction_capital_vote( construction_capital_id_type id )const;
       fc::optional<construction_capital_history_object> get_construction_capital_history( construction_capital_id_type id )const;
+      fc::optional<construction_capital_rate_vote_object> get_construction_capital_rate_vote( account_id_type id )const;
 
    private:
       std::shared_ptr< database_api_impl > my;
@@ -620,6 +638,7 @@ FC_API(graphene::app::database_api,
 
    // Blocks and transactions
    (get_block_header)
+   (get_block_header_batch)
    (get_block)
    (get_transaction)
    (get_recent_transaction_by_id)
@@ -660,6 +679,7 @@ FC_API(graphene::app::database_api,
    (lookup_asset_symbols)
 
    // Markets / feeds
+   (get_exchange_fee_rate)
    (get_order_book)
    (get_limit_orders)
    (get_call_orders)
@@ -708,4 +728,5 @@ FC_API(graphene::app::database_api,
    (get_construction_capital)
    (get_construction_capital_history)
    (get_construction_capital_vote)
+   (get_construction_capital_rate_vote)
 )

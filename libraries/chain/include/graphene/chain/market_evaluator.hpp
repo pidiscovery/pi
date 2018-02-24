@@ -34,6 +34,17 @@ namespace graphene { namespace chain {
    struct call_order_update_operation;
    struct limit_order_cancel_operation;
    struct limit_order_create_operation;
+   struct limit_order_fee_config_operation;
+
+   class limit_order_fee_config_evaluator : public evaluator<limit_order_fee_config_evaluator>
+   {
+      public:
+         typedef limit_order_fee_config_operation operation_type;
+
+         void_result do_evaluate( const limit_order_fee_config_operation& o );
+         void_result do_apply( const limit_order_fee_config_operation& o );
+   };
+
 
    class limit_order_create_evaluator : public evaluator<limit_order_create_evaluator>
    {

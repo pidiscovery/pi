@@ -342,6 +342,10 @@ namespace graphene { namespace app {
                break;
             } case construction_capital_vote_object_type:{
                break;
+            } case limit_order_fee_config_object_type:{
+               break;
+            } case construction_capital_rate_vote_object_type: {
+               break;
             }
           }
        }

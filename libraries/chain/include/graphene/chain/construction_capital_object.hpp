@@ -30,7 +30,7 @@
 
 
 namespace graphene { namespace chain {
-    // class database;
+    // class construction_capital_object;
     /**
     * @brief This class represents a construction capital created by a specified account.
     * @ingroup object
@@ -97,7 +97,7 @@ namespace graphene { namespace chain {
     > construction_capital_index_type;
     typedef generic_index<construction_capital_object, construction_capital_index_type> construction_capital_index;
 
-    // class database;
+    // class construction_capital_vote_object;
     /**
     * @brief This class represents a construction capital vote
     * @ingroup object
@@ -164,6 +164,47 @@ namespace graphene { namespace chain {
     > construction_capital_vote_index_type;
     typedef generic_index<construction_capital_vote_object, construction_capital_vote_index_type> construction_capital_vote_index;
 
+    // class construction_capital_rate_vote_object;
+    /**
+    * @brief This class represents a construction capital rate created by a specified account.
+    * @ingroup object
+    * @ingroup protocol
+    *
+    * construction capital is used when calculating incetive.
+    */
+    class construction_capital_rate_vote_object : public graphene::db::abstract_object<construction_capital_rate_vote_object> {
+    public:
+        static const uint8_t space_id = protocol_ids;
+        static const uint8_t type_id  = construction_capital_rate_vote_object_type;
+        
+        account_id_type account;
+        fc::time_point_sec timestamp;
+        uint8_t vote_option;    // 0-keep same; 1-increase; 2-decrease
+    };    
+
+    typedef multi_index_container<
+        construction_capital_rate_vote_object,
+        indexed_by<
+            ordered_unique< 
+                tag<by_id>, 
+                member< 
+                    object, 
+                    object_id_type, 
+                    &object::id 
+                > 
+            >,
+            ordered_unique< 
+                tag<by_account>, 
+                member< 
+                    construction_capital_rate_vote_object, 
+                    account_id_type, 
+                    &construction_capital_rate_vote_object::account 
+                > 
+            >
+        >
+    > construction_capital_rate_vote_index_type;
+    typedef generic_index<construction_capital_rate_vote_object, construction_capital_rate_vote_index_type> construction_capital_rate_vote_index;
+
 }} // graphene::chain
 
 
@@ -184,3 +225,8 @@ FC_REFLECT_DERIVED( graphene::chain::construction_capital_vote_object,
                     (graphene::db::object),
                     (cc_from)(cc_to) 
                 )
+
+FC_REFLECT_DERIVED( graphene::chain::construction_capital_rate_vote_object,
+                    (graphene::db::object),
+                    (account)(timestamp)(vote_option) 
+                )                

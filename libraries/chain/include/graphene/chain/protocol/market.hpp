@@ -27,6 +27,35 @@
 namespace graphene { namespace chain { 
 
    /**
+    *  @ingroup operations
+    *  Used to cancel an existing limit order. Both fee_pay_account and the
+    *  account to receive the proceeds must be the same as order->seller.
+    *
+    *  @return the amount actually refunded
+    */
+   struct limit_order_fee_config_operation : public base_operation
+   {
+      struct fee_parameters_type { uint64_t fee = 1000; };
+
+      asset               fee;
+      account_id_type     receiver;
+    //   uint32_t            rate;
+      asset_id_type       asset_a;
+      uint32_t            rate_a;
+      asset_id_type       asset_b;
+      uint32_t            rate_b;      
+      extensions_type     extensions;
+      account_id_type fee_payer()const { return receiver; }
+      void            validate()const;
+   };    
+
+   struct limit_order_exchange_fee {
+    //   uint32_t rate;
+      account_id_type receiver;
+   };
+   
+   typedef fc::static_variant<limit_order_exchange_fee> limit_order_extensions;
+   /**
     *  @class limit_order_create_operation
     *  @brief instructs the blockchain to attempt to sell one asset for another
     *  @ingroup operations
@@ -59,7 +88,7 @@ namespace graphene { namespace chain {
 
       /// If this flag is set the entire order must be filled or the operation is rejected
       bool fill_or_kill = false;
-      extensions_type   extensions;
+      flat_set<limit_order_extensions>   extensions;
 
       pair<asset_id_type,asset_id_type> get_market()const
       {
@@ -135,14 +164,16 @@ namespace graphene { namespace chain {
       struct fee_parameters_type {};
 
       fill_order_operation(){}
-      fill_order_operation( object_id_type o, account_id_type a, asset p, asset r, asset f )
-         :order_id(o),account_id(a),pays(p),receives(r),fee(f){}
+      fill_order_operation( object_id_type o, account_id_type a, asset p, asset r, asset f, uint32_t ef_rate=0, account_id_type ef_receiver=GRAPHENE_NULL_ACCOUNT )
+         :order_id(o),account_id(a),pays(p),receives(r),fee(f),exchange_fee_rate(ef_rate),exchange_fee_receiver(ef_receiver){}
 
       object_id_type      order_id;
       account_id_type     account_id;
       asset               pays;
       asset               receives;
       asset               fee; // paid by receiving account
+      optional<uint32_t>            exchange_fee_rate;
+      optional<account_id_type>     exchange_fee_receiver;
 
 
       pair<asset_id_type,asset_id_type> get_market()const
@@ -160,6 +191,7 @@ namespace graphene { namespace chain {
 
 } } // graphene::chain
 
+FC_REFLECT( graphene::chain::limit_order_fee_config_operation::fee_parameters_type, (fee) )
 FC_REFLECT( graphene::chain::limit_order_create_operation::fee_parameters_type, (fee) )
 FC_REFLECT( graphene::chain::limit_order_cancel_operation::fee_parameters_type, (fee) )
 FC_REFLECT( graphene::chain::call_order_update_operation::fee_parameters_type, (fee) )
@@ -167,7 +199,10 @@ FC_REFLECT( graphene::chain::call_order_update_operation::fee_parameters_type, (
 FC_REFLECT( graphene::chain::fill_order_operation::fee_parameters_type,  )
 
 
+FC_REFLECT( graphene::chain::limit_order_exchange_fee,/*(rate)*/(receiver))
+FC_REFLECT_TYPENAME( graphene::chain::limit_order_extensions )
+FC_REFLECT( graphene::chain::limit_order_fee_config_operation, (fee)(receiver)/*(rate)*/(asset_a)(rate_a)(asset_b)(rate_b)(extensions))
 FC_REFLECT( graphene::chain::limit_order_create_operation,(fee)(seller)(amount_to_sell)(min_to_receive)(expiration)(fill_or_kill)(extensions))
 FC_REFLECT( graphene::chain::limit_order_cancel_operation,(fee)(fee_paying_account)(order)(extensions) )
 FC_REFLECT( graphene::chain::call_order_update_operation, (fee)(funding_account)(delta_collateral)(delta_debt)(extensions) )
-FC_REFLECT( graphene::chain::fill_order_operation, (fee)(order_id)(account_id)(pays)(receives) )
+FC_REFLECT( graphene::chain::fill_order_operation, (fee)(order_id)(account_id)(pays)(receives)(exchange_fee_rate)(exchange_fee_receiver) )

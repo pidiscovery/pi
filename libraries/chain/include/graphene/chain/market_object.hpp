@@ -34,6 +34,61 @@ namespace graphene { namespace chain {
 
 using namespace graphene::db;
 
+
+/**
+ *  @brief fee set for sepcified exchange
+ *  @ingroup object
+ *  @ingroup protocol
+ *  @ingroup market
+ *
+ *  This limit_order_objects are indexed by @ref expiration and is automatically deleted on the first block after expiration.
+ */
+class limit_order_fee_config_object : public abstract_object<limit_order_fee_config_object>
+{
+   public:
+      static const uint8_t space_id = protocol_ids;
+      static const uint8_t type_id  = limit_order_fee_config_object_type;
+      account_id_type   receiver;
+      // uint32_t          rate;
+      flat_map<pair<asset_id_type, asset_id_type>, pair<uint32_t, uint32_t> > rates;
+
+      pair<uint32_t, uint32_t> get_fee_rate(asset_id_type a, asset_id_type b) const {
+         pair<asset_id_type, asset_id_type> key;
+         if (a > b) {
+            key = pair<asset_id_type, asset_id_type>(b, a);
+         } else {
+            key = pair<asset_id_type, asset_id_type>(a, b);
+         }
+         auto it = rates.find(key);
+         if (it == rates.end()) {
+            return pair<uint32_t, uint32_t>(0, 0);
+         } else {
+            if (a > b) {
+               return pair<uint32_t, uint32_t>(it->second.second, it->second.first);
+            } else {
+               return it->second;
+            }
+         }
+      }
+};
+
+struct by_receiver;
+typedef multi_index_container<
+   limit_order_fee_config_object,
+   indexed_by<
+      ordered_unique< tag<by_id>, member< object, object_id_type, &object::id > >,
+      ordered_unique< 
+         tag<by_receiver>, 
+         member< 
+            limit_order_fee_config_object, 
+            account_id_type, 
+            &limit_order_fee_config_object::receiver 
+         >
+      >
+   >
+> limit_order_fee_config_multi_index_type;
+typedef generic_index<limit_order_fee_config_object, limit_order_fee_config_multi_index_type> limit_order_fee_config_index;
+
 /**
  *  @brief an offer to sell a amount of a asset at a specified exchange rate by a certain time
  *  @ingroup object
@@ -53,6 +108,8 @@ class limit_order_object : public abstract_object<limit_order_object>
       share_type       for_sale; ///< asset id is sell_price.base.asset_id
       price            sell_price;
       share_type       deferred_fee;
+      // uint32_t         exchange_fee_rate;
+      optional<account_id_type>  exchange_fee_receiver;
 
       pair<asset_id_type,asset_id_type> get_market()const
       {
@@ -120,6 +177,13 @@ class call_order_object : public abstract_object<call_order_object>
       share_type       collateral;  ///< call_price.base.asset_id, access via get_collateral
       share_type       debt;        ///< call_price.quote.asset_id, access via get_collateral
       price            call_price;  ///< Debt / Collateral
+
+      pair<asset_id_type,asset_id_type> get_market()const
+      {
+         auto tmp = std::make_pair( call_price.base.asset_id, call_price.quote.asset_id );
+         if( tmp.first > tmp.second ) std::swap( tmp.first, tmp.second );
+         return tmp;
+      }
 };
 
 /**
@@ -198,9 +262,14 @@ typedef generic_index<force_settlement_object, force_settlement_object_multi_ind
 
 } } // graphene::chain
 
+FC_REFLECT_DERIVED( graphene::chain::limit_order_fee_config_object,
+                    (graphene::db::object),
+                    (receiver)/*(rate)*/(rates)
+                  )
+
 FC_REFLECT_DERIVED( graphene::chain::limit_order_object,
                     (graphene::db::object),
-                    (expiration)(seller)(for_sale)(sell_price)(deferred_fee)
+                    (expiration)(seller)(for_sale)(sell_price)(deferred_fee)/*(exchange_fee_rate)*/(exchange_fee_receiver)
                   )
 
 FC_REFLECT_DERIVED( graphene::chain::call_order_object, (graphene::db::object),

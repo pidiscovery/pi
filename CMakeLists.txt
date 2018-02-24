@@ -32,13 +32,16 @@ if (USE_PCH)
   include (cotire)
 endif(USE_PCH)
 
-list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/fc/CMakeModules" )
+IF( NOT WIN32 )
+  list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/fc/CMakeModules" )
+ENDIF( NOT WIN32 )
 list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/fc/GitVersionGen" )
 include( GetGitRevisionDescription )
 get_git_head_revision( GIT_REFSPEC GIT_SHA2 )
 
 SET(BOOST_COMPONENTS)
 LIST(APPEND BOOST_COMPONENTS thread
+                             iostreams
                              date_time
                              system
                              filesystem
@@ -129,6 +132,10 @@ else( WIN32 ) # Apple AND Linux
 
     if( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" )
         set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-builtin-memcmp" )
+    elseif( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" )
+        if( CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 4.0.0 OR CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.0.0 )
+            set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-invalid-partial-specialization" )
+        endif()
     endif()
 
     if( "${CMAKE_GENERATOR}" STREQUAL "Ninja" )

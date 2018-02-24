@@ -25,6 +25,7 @@
 #include <graphene/chain/protocol/authority.hpp>
 #include <graphene/app/impacted.hpp>
 #include <graphene/chain/construction_capital_object.hpp>
+#include <graphene/chain/market_object.hpp>
 #include <graphene/db/generic_index.hpp>
 #include <fc/crypto/base36.hpp>
 #include <graphene/chain/account_object.hpp>
@@ -48,6 +49,10 @@ struct get_impacted_account_visitor
    }
 
    void operator()( const asset_claim_fees_operation& op ){}
+   void operator()( const limit_order_fee_config_operation& op ) 
+   {
+      _impacted.insert( op.receiver );
+   }
    void operator()( const limit_order_create_operation& op ) {}
    void operator()( const limit_order_cancel_operation& op )
    {
@@ -57,6 +62,9 @@ struct get_impacted_account_visitor
    void operator()( const fill_order_operation& op )
    {
       _impacted.insert( op.account_id );
+      if (op.exchange_fee_receiver && *op.exchange_fee_receiver != GRAPHENE_NULL_ACCOUNT && op.exchange_fee_rate && *op.exchange_fee_rate > 0) {
+         _impacted.insert( *op.exchange_fee_receiver );
+      }
    }
 
    void operator()( const account_create_operation& op )
@@ -249,6 +257,11 @@ struct get_impacted_account_visitor
             }
          }
       }
+   }
+
+   void operator()( const construction_capital_rate_vote_operation& op ) 
+   {
+      _impacted.insert( op.account_id );
    }
 
    void operator()( const account_create_by_transfer_operation& op) {

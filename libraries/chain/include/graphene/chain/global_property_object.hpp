@@ -51,6 +51,8 @@ namespace graphene { namespace chain {
          uint32_t                           next_available_vote_id = 0;
          vector<committee_member_id_type>   active_committee_members; // updated once per maintenance interval
          flat_set<witness_id_type>          active_witnesses; // updated once per maintenance interval
+         
+         optional<time_point>       next_construction_capital_rate_vote_time;
          // n.b. witness scheduling is done by witness_schedule object
    };
 
@@ -146,4 +148,5 @@ FC_REFLECT_DERIVED( graphene::chain::global_property_object, (graphene::db::obje
                     (next_available_vote_id)
                     (active_committee_members)
                     (active_witnesses)
+                    (next_construction_capital_rate_vote_time)
                   )

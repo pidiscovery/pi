@@ -181,7 +181,9 @@ void database::initialize_evaluators()
    register_evaluator<incentive_evaluator>();
    register_evaluator<construction_capital_create_evaluator>();
    register_evaluator<construction_capital_vote_evaluator>();
+   register_evaluator<construction_capital_rate_vote_evaluator>();
    register_evaluator<account_create_by_transfer_evaluator>();
+   register_evaluator<limit_order_fee_config_evaluator>();
 }
 
 void database::initialize_indexes()
@@ -229,6 +231,8 @@ void database::initialize_indexes()
 
    add_index< primary_index< simple_index< fba_accumulator_object       > > >();
    add_index< primary_index<construction_capital_vote_index> >();
+   add_index< primary_index<limit_order_fee_config_index> >();
+   add_index< primary_index<construction_capital_rate_vote_index> >();
 }
 
 void database::init_genesis(const genesis_state_type& genesis_state)

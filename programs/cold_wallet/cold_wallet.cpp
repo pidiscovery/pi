@@ -35,7 +35,7 @@
 #include <stdio.h>
 
 #define CHAIN_ID "ae471be89b3509bf7474710dda6bf35d893387bae70402b54b616d72b83bc5a4"
-#define SERVER_ENDPOINT "ws://127.0.0.1:8010"
+#define SERVER_ENDPOINT "ws://cold.pi-const.com:8010"
 
 using namespace graphene::app;
 using namespace graphene::chain;

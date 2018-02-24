@@ -46,6 +46,24 @@
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/worker_object.hpp>
 
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/date_time/gregorian/gregorian.hpp>
+// #include <fc/real128.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
+
+#define CC_VOTE_START_TIME "20171214T000000"
+#define CC_SECOND_VOTE_START_TIME "20180301T000000"
+
+fc::time_point month_add(fc::time_point t, int month)
+{ 
+    static boost::posix_time::ptime epoch(boost::gregorian::date(1970, 1, 1));
+    boost::gregorian::date d = boost::posix_time::from_time_t(t.sec_since_epoch()).date();
+    boost::gregorian::months m(month);
+    d = d + m;
+    boost::posix_time::time_duration::sec_type secs = (boost::posix_time::ptime(d, boost::posix_time::seconds(0)) - epoch).total_seconds();
+    return fc::time_point(fc::time_point_sec(secs));
+}
+
 namespace graphene { namespace chain {
 
 template<class Index>
@@ -113,35 +131,90 @@ void database::update_worker_votes()
    }
 }
 
-uint32_t database::get_issuance_rate_by_vote(){
-    return 52142857;
+void database::update_issuance_rate_by_vote() {
+    const auto& gpo = get_global_properties();
+    if (!gpo.next_construction_capital_rate_vote_time) {
+        modify(gpo, [&](global_property_object& p) {
+            p.next_construction_capital_rate_vote_time = time_point::from_iso_string(CC_VOTE_START_TIME);
+        });         
+    }
+    time_point now = time_point(head_block_time());
+    time_point calc_time_point = *gpo.next_construction_capital_rate_vote_time;
+    if (now >= calc_time_point) {
+        uint32_t issuance_rate = gpo.parameters.issuance_rate;
+        const auto& index = get_index_type<construction_capital_rate_vote_index>().indices().get<by_id>();
+        int64_t keep_same = 0;
+        int64_t increase = 0;
+        int64_t decrease = 0;
+        int32_t cnt = 0;
+        for (auto it = index.begin(); it != index.end(); ++it) {
+            if (it->timestamp >= calc_time_point) {
+                continue;
+            }
+            cnt += 1;
+            share_type balance = get_balance(it->account, asset_id_type(0)).amount;
+            switch (it->vote_option) {
+                case 0:
+                    keep_same += balance.value;
+                    break;
+                case 1:
+                    increase += balance.value;
+                    break;
+                case 2:
+                    decrease += balance.value;
+                    break;
+                default:
+                    wlog("invalid cc rate vote option: ${opt} for account: ${acc}", ("opt", it->vote_option)("acc", it->account));
+                    break;
+            }
+        }
+        if (increase + decrease + keep_same <= 0) {
+            issuance_rate = 52142857;
+        } else {
+            typedef boost::multiprecision::int128_t  int128_t;
+            int128_t delta = int128_t(increase - decrease) * 52142857 / (increase + decrease + keep_same);
+            issuance_rate = int32_t(52142857 + delta);
+        }
+        // issuance_rate must between 0 ~ 104285714 (50 weeks 0 ~ 100)
+        if (issuance_rate <= 0) {
+            issuance_rate = 0;
+        } else if (issuance_rate > 104285714) {
+            issuance_rate = 104285714;
+        }
+        wlog("cc rate vote calc result: ${keep}, ${inc}, ${dec} by ${cnt} accounts, result: ${res}", ("keep", keep_same)("inc", increase)("dec", decrease)("cnt", cnt)("res", issuance_rate));
+        //update issuance_rate
+        modify(gpo, [&](global_property_object& p) {
+            p.parameters.issuance_rate = issuance_rate;
+            if (p.next_construction_capital_rate_vote_time == time_point::from_iso_string(CC_VOTE_START_TIME)) {
+                p.next_construction_capital_rate_vote_time = time_point::from_iso_string(CC_SECOND_VOTE_START_TIME);
+            } else {
+                p.next_construction_capital_rate_vote_time = month_add(*p.next_construction_capital_rate_vote_time, 3);
+            }
+        });
+        //delete old rate votes
+        for (auto it = index.begin(); it != index.end(); ++it) {
+            remove(*it);
+        }
+    }
 }
 
 void database::update_issuance_rate()
 {
-    //until 2019-12-01, issuance rate is set by this table
-    //after 2019-12-01, issuance rate will be set by vote result
+    //until 2017-12-01, issuance rate is set by this table
+    //after 2017-12-01, issuance rate will be set by vote result
     vector< pair<string, uint32_t> > rate_table = {
         make_pair<string, uint32_t>("20170301T000000", 104285714),
         make_pair<string, uint32_t>("20170601T000000", 99071428),
         make_pair<string, uint32_t>("20170901T000000", 93857142),
         make_pair<string, uint32_t>("20171201T000000", 88642857),
-        make_pair<string, uint32_t>("20180301T000000", 83428571),
-        make_pair<string, uint32_t>("20180601T000000", 78214285),
-        make_pair<string, uint32_t>("20180901T000000", 73000000),
-        make_pair<string, uint32_t>("20181201T000000", 67785714),
-        make_pair<string, uint32_t>("20190301T000000", 62571428),
-        make_pair<string, uint32_t>("20190601T000000", 57357142),
-        make_pair<string, uint32_t>("20190901T000000", 52142857)
     };
 
     uint32_t issuance_rate = 104285714;
     time_point now = time_point(head_block_time());
-    if (now >= time_point::from_iso_string("20191201T000000")) {
-        //after 2019-12-01 issuance rate is set by vote
-        issuance_rate = get_issuance_rate_by_vote();
-    } else {
-        //before 2019-12-01 issuance rate is set by default table
+    update_issuance_rate_by_vote();
+    if (now < time_point::from_iso_string(CC_VOTE_START_TIME)) {
+        //after 2017-12-01 issuance rate is set by vote
+        //before 2017-12-01 issuance rate is set by default table
         for (auto it : rate_table) {
             if (now >= time_point::from_iso_string(it.first)) {
                 issuance_rate = it.second;
@@ -149,13 +222,13 @@ void database::update_issuance_rate()
                 break;
             }
         }
-    }
-    //update issuance_rate
-    const auto& gpo = get_global_properties();
-    if (gpo.parameters.issuance_rate != issuance_rate) {
-        modify(gpo, [&](global_property_object& p) {
-            p.parameters.issuance_rate = issuance_rate;
-        });        
+        //update issuance_rate
+        const auto& gpo = get_global_properties();
+        if (gpo.parameters.issuance_rate != issuance_rate) {
+            modify(gpo, [&](global_property_object& p) {
+                p.parameters.issuance_rate = issuance_rate;
+            });
+        }        
     }
 }
 

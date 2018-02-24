@@ -94,12 +94,14 @@ namespace graphene { namespace chain {
             asset_settle_cancel_operation,  // VIRTUAL
             asset_claim_fees_operation,
             fba_distribute_operation,        // VIRTUAL
-            incentive_operation,     //VIRTUAL
+            incentive_operation,
             construction_capital_create_operation,
             construction_capital_vote_operation,
             committee_member_issue_construction_capital_operation,
             committee_member_grant_instant_payback_operation,
-            account_create_by_transfer_operation
+            account_create_by_transfer_operation,
+            limit_order_fee_config_operation,
+            construction_capital_rate_vote_operation
          > operation;
 
    /// @} // operations group

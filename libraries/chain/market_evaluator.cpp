@@ -38,6 +38,59 @@
 #include <fc/smart_ref_impl.hpp>
 
 namespace graphene { namespace chain {
+void_result limit_order_fee_config_evaluator::do_evaluate(const limit_order_fee_config_operation& op)
+{
+   try {
+      FC_ASSERT(op.fee.amount >= 0);
+      FC_ASSERT(op.asset_a != op.asset_b);
+      FC_ASSERT(op.rate_a >= 0 && op.rate_a <= GRAPHENE_EXCHANGE_RATE_SCALE);
+      FC_ASSERT(op.rate_b >= 0 && op.rate_b <= GRAPHENE_EXCHANGE_RATE_SCALE);
+      const database& d = db();
+      FC_ASSERT(
+         d.find(op.receiver) != nullptr,
+         "receiver ${receiver} not found",
+         ("receiver", op.receiver)
+      );      
+   } catch (...) {
+      FC_LOG_MESSAGE(error, "limit_order_fee_config_operation param invalid");
+   }
+   return void_result();
+}
+
+void_result limit_order_fee_config_evaluator::do_apply(const limit_order_fee_config_operation& op)
+{  
+   try {
+      const auto& index = db().get_index_type<limit_order_fee_config_index>().indices().get<by_receiver>();
+      const auto& fee_conf = index.find(op.receiver);
+      if (fee_conf == index.end()) {
+         db().create<limit_order_fee_config_object>( [&](limit_order_fee_config_object &obj){
+            obj.receiver = op.receiver;
+            if (op.asset_a > op.asset_b) {
+               auto key = pair<asset_id_type, asset_id_type>(op.asset_b, op.asset_a);
+               obj.rates[key] = pair<int32_t, int32_t>(op.rate_b, op.rate_a);
+            } else {
+               auto key = pair<asset_id_type, asset_id_type>(op.asset_a, op.asset_b);
+               obj.rates[key] = pair<int32_t, int32_t>(op.rate_a, op.rate_b);                  
+            }
+         });
+      } else {
+         db().modify(*fee_conf, [&](limit_order_fee_config_object &obj) {
+            if (op.asset_a > op.asset_b) {
+               auto key = pair<asset_id_type, asset_id_type>(op.asset_b, op.asset_a);
+               obj.rates[key] = pair<int32_t, int32_t>(op.rate_b, op.rate_a);
+            } else {
+               auto key = pair<asset_id_type, asset_id_type>(op.asset_a, op.asset_b);
+               obj.rates[key] = pair<int32_t, int32_t>(op.rate_a, op.rate_b);                  
+            }
+         });
+      }
+
+   } catch (...) {
+      FC_LOG_MESSAGE(error, "limit_order_fee_config_operation param invalid");
+   }
+   return void_result();
+}
+
 void_result limit_order_create_evaluator::do_evaluate(const limit_order_create_operation& op)
 { try {
    const database& d = db();
@@ -59,6 +112,26 @@ void_result limit_order_create_evaluator::do_evaluate(const limit_order_create_o
    FC_ASSERT( d.get_balance( *_seller, *_sell_asset ) >= op.amount_to_sell, "insufficient balance",
               ("balance",d.get_balance(*_seller,*_sell_asset))("amount_to_sell",op.amount_to_sell) );
 
+   for (auto it : op.extensions) {
+      try {
+         const limit_order_exchange_fee& exchange_fee = it.get<limit_order_exchange_fee>();
+      //    // check market fee rate
+      //    FC_ASSERT(
+      //       exchange_fee.rate > 0 && exchange_fee.rate < GRAPHENE_EXCHANGE_RATE_SCALE, 
+      //       "limit_order_exchange_fee.rate ${rate} is not between (0, ${max_rate})",
+      //       ("rate", exchange_fee.rate)
+      //       ("max_rate", GRAPHENE_EXCHANGE_RATE_SCALE)
+      //    );
+         // check market fee receiver
+         FC_ASSERT(
+            d.find(exchange_fee.receiver) != nullptr,
+            "exchange_fee.receiver ${receiver} not found",
+            ("receiver", exchange_fee.receiver)
+         );
+      } catch (...) {
+         FC_LOG_MESSAGE(error, "extension is not limit_order_exchange_fee type");
+      }
+   }
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (op) ) }
 
@@ -88,6 +161,20 @@ object_id_type limit_order_create_evaluator::do_apply(const limit_order_create_o
        obj.sell_price = op.get_price();
        obj.expiration = op.expiration;
        obj.deferred_fee = _deferred_fee;
+       bool exchange_fee_set = false;
+       for (auto it : op.extensions) {
+          try {
+             const limit_order_exchange_fee& exchange_fee = it.get<limit_order_exchange_fee>();
+            //  obj.exchange_fee_rate = exchange_fee.rate;
+             obj.exchange_fee_receiver = exchange_fee.receiver;
+             exchange_fee_set = true;
+          } catch (...) {
+             continue;
+          }
+       }
+       if (!exchange_fee_set) {
+          obj.exchange_fee_receiver.reset();
+       }
    });
    limit_order_id_type order_id = new_order_object.id; // save this because we may remove the object by filling it
    bool filled = db().apply_order(new_order_object);

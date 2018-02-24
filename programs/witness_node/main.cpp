@@ -214,7 +214,6 @@ int main(int argc, char** argv) {
       {
          try 
          {
-            fc::path logging_ini_path = data_dir / "logging.ini";
             fc::optional<fc::logging_config> logging_config = load_logging_config_from_ini_file(logging_ini_path);
             if (logging_config)
                fc::configure_logging(*logging_config);            

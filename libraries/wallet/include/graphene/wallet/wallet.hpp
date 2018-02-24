@@ -348,16 +348,23 @@ class wallet_api
        *
        * This returns a list of operation history objects, which describe activity on the account.
        *
-       * @note this API doesn't give a way to retrieve more than the most recent 100 transactions,
-       *       you can interface directly with the blockchain to get more history
        * @param name the name or id of the account
-       * @param limit the number of entries to return (starting from the most recent) (max 100)
+       * @param limit the number of entries to return (starting from the most recent)
        * @returns a list of \c operation_history_objects
        */
       vector<operation_detail>  get_account_history(string name, int limit)const;
 
+      /** Returns the relative operations on the named account from start number.
+       *
+       * @param name the name or id of the account
+       * @param stop Sequence number of earliest operation.
+       * @param limit the number of entries to return
+       * @param start  the sequence number where to start looping back throw the history
+       * @returns a list of \c operation_history_objects
+       */
+     vector<operation_detail>  get_relative_account_history(string name, uint32_t stop, int limit, uint32_t start)const;
 
-      vector<bucket_object>             get_market_history(string symbol, string symbol2, uint32_t bucket)const;
+      vector<bucket_object>             get_market_history(string symbol, string symbol2, uint32_t bucket, fc::time_point_sec start, fc::time_point_sec end)const;
       vector<limit_order_object>        get_limit_orders(string a, string b, uint32_t limit)const;
       vector<call_order_object>         get_call_orders(string a, uint32_t limit)const;
       vector<force_settlement_object>   get_settle_orders(string a, uint32_t limit)const;
@@ -794,6 +801,26 @@ class wallet_api
                                   string memo,
                                   bool broadcast = false);
 
+      /** Set exchange fee conf.
+       * @param account the name or id of the account to set fee conf for
+       * @param rate new fee rate
+       * @param broadcast true to broadcast the transaction on the network
+       */
+      signed_transaction set_exchange_fee_conf(string account,
+                                    string asset_symbol_a,
+                                    int32_t rate_a, 
+                                    string asset_symbol_b,
+                                    int32_t rate_b, 
+                                    bool broadcast);
+
+      /** Get exchange fee conf.
+       * @param account the name or id of the account to set fee conf for
+       * @param a asset a symblol
+       * @param b asset b symblol
+       * @returns the fee rate of the specified asset pair for the account
+       */
+      pair<uint32_t,uint32_t> get_exchage_fee_rate(string account, string asset_symbol_a, string asset_symbol_b);
+      
       /** Create a construction capital.
        * @param account the name or id of the account creating the construction capital
        * @param amount amount to lock
@@ -819,6 +846,16 @@ class wallet_api
                                                     const string& cc_to_id, 
                                                     bool broadcast = false
                                             );
+      /** vote for constructioncapital rate
+       * @param account the name or id of the account who is voting
+       * @param cc_from construction capital id of who is voting
+       * @param cc_to_id construction capital id of who is voted for
+       * @param broadcast true to broadcast the transaction on the network
+       */
+      signed_transaction vote_for_construction_capital_rate( string account, 
+                                                    uint8_t option, 
+                                                    bool broadcast = false
+                                            );              
       /** get construction capital by id
        * @param id construction capital id
        */
@@ -833,6 +870,11 @@ class wallet_api
        * @param id construction capital id
        */
       vector<construction_capital_vote_object> get_construction_capital_vote( const string& id );
+
+      /** get construction capital vote by construction capital id
+       * @param id construction capital id
+       */
+      construction_capital_rate_vote_object get_construction_capital_rate_vote( const string& id );
 
       /**
        *  This method is used to convert a JSON transaction to its transactin ID.
@@ -1728,12 +1770,16 @@ FC_API( graphene::wallet::wallet_api,
         (cancel_order)
         (transfer)
         (transfer2)
+        (set_exchange_fee_conf)
+        (get_exchage_fee_rate)
         (create_account_by_transfer)
         (create_construction_capital)
         (vote_for_construction_capital)
+        (vote_for_construction_capital_rate)
         (get_construction_capital)
         (get_account_construction_capital)
         (get_construction_capital_vote)
+        (get_construction_capital_rate_vote)
         (get_transaction_id)
         (create_asset)
         (update_asset)
@@ -1771,6 +1817,7 @@ FC_API( graphene::wallet::wallet_api,
         (get_block)
         (get_account_count)
         (get_account_history)
+        (get_relative_account_history)
         (is_public_key_registered)
         (get_market_history)
         (get_global_properties)

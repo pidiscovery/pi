@@ -28,8 +28,9 @@
 #include <graphene/chain/asset_object.hpp>
 #include <graphene/chain/hardfork.hpp>
 #include <graphene/chain/market_object.hpp>
+#include <fc/real128.hpp>
 
-#include <fc/uint128.hpp>
+using namespace fc;
 
 namespace graphene { namespace chain {
 
@@ -305,8 +306,28 @@ bool database::fill_order( const limit_order_object& order, const asset& pays, c
    auto issuer_fees = pay_market_fees( recv_asset, receives );
    pay_order( seller, receives - issuer_fees, pays );
 
+   // pay exchange fee
+   uint32_t exchange_fee_rate = 0;
+   account_id_type exchange_fee_receiver = GRAPHENE_NULL_ACCOUNT;
+   if (order.exchange_fee_receiver) {
+      exchange_fee_receiver = *order.exchange_fee_receiver;
+      const auto& index = get_index_type<limit_order_fee_config_index>().indices().get<by_receiver>();
+      const auto& fee_conf = index.find(exchange_fee_receiver);
+      if (fee_conf != index.end()) {
+        auto rate = fee_conf->get_fee_rate(receives.asset_id, pays.asset_id);
+        if (rate.first > 0) {
+          exchange_fee_rate = rate.first;
+          asset total_receive = receives - issuer_fees;
+          real128 amount = real128(total_receive.amount.value) * real128(exchange_fee_rate) / real128(GRAPHENE_EXCHANGE_RATE_SCALE);
+          asset exchange_got(amount.to_uint64(), total_receive.asset_id);
+          adjust_balance(seller.get_id(), -exchange_got);
+          adjust_balance(exchange_fee_receiver, exchange_got);
+        }
+      }
+   }
+  
    assert( pays.asset_id != receives.asset_id );
-   push_applied_operation( fill_order_operation( order.id, order.seller, pays, receives, issuer_fees ) );
+   push_applied_operation( fill_order_operation( order.id, order.seller, pays, receives, issuer_fees, exchange_fee_rate, exchange_fee_receiver ) );
 
    // conditional because cheap integer comparison may allow us to avoid two expensive modify() and object lookups
    if( order.deferred_fee > 0 )
