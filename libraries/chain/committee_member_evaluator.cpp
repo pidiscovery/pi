@@ -93,11 +93,6 @@ void_result committee_member_issue_construction_capital_evaluator::do_evaluate(c
 { try {
    FC_ASSERT(trx_state->_is_proposed_trx);
    FC_ASSERT(
-         time_point(db().head_block_time()) <= time_point::from_iso_string("2018-07-01T00:00:00"),
-         "construction capital can only be issued before 2018-07-01T00:00:00, now is: ${now}",
-         ("now", db().head_block_time())
-   );
-   FC_ASSERT(
          o.amount <= db().get_balance(GRAPHENE_CONSTRUCTION_CAPITAL_ACCOUNT, asset_id_type(0)).amount,
          "transfer amount:${amount} should not greater than GRAPHENE_CONSTRUCTION_CAPITAL_ACCOUNT's balance: ${cca}",
          ("amount", o.amount)
