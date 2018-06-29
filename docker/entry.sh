@@ -97,8 +97,8 @@ echo "# End generating $CONFIG_FILE."
 echo "# -----------------------------------"
 
 
-echo "witness_node -d . $WITNESS_ARGS"
-witness_node -d . $WITNESS_ARGS
+echo "witness_node -d /data $WITNESS_ARGS"
+witness_node -d /data $WITNESS_ARGS
 
 echo "Done running witness_node"
 
