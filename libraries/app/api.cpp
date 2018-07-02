@@ -439,6 +439,9 @@ namespace graphene { namespace app {
                                                                        unsigned limit, 
                                                                        operation_history_id_type start ) const
     {
+       if (account_object::is_system_account(account)) {
+          return vector<operation_history_object>();
+       }
        FC_ASSERT( _app.chain_database() );
        const auto& db = *_app.chain_database();       
        FC_ASSERT( limit <= 100 );
@@ -467,6 +470,9 @@ namespace graphene { namespace app {
                                                                        operation_history_id_type stop,
                                                                        unsigned limit) const
     {
+       if (account_object::is_system_account(account)) {
+          return vector<operation_history_object>();
+       }      
        FC_ASSERT( _app.chain_database() );
        const auto& db = *_app.chain_database();
        FC_ASSERT( limit <= 100 );
@@ -497,6 +503,9 @@ namespace graphene { namespace app {
                                                                        operation_history_id_type stop,
                                                                        unsigned limit) const
     {
+       if (account_object::is_system_account(account)) {
+          return vector<operation_history_object>();
+       }      
        FC_ASSERT( _app.chain_database() );
        const auto& db = *_app.chain_database();
        FC_ASSERT( limit <= 100 );
@@ -529,6 +538,9 @@ namespace graphene { namespace app {
                                                                                 unsigned limit, 
                                                                                 uint32_t start) const
     {
+       if (account_object::is_system_account(account)) {
+          return vector<operation_history_object>();
+       }      
        FC_ASSERT( _app.chain_database() );
        const auto& db = *_app.chain_database();
        FC_ASSERT(limit <= 100);

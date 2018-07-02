@@ -225,6 +225,8 @@ namespace graphene { namespace chain {
          uint8_t top_n_control_flags = 0;
          static const uint8_t top_n_control_owner  = 1;
          static const uint8_t top_n_control_active = 2;
+         
+         static const bool is_system_account(account_id_type acc) { return acc < account_id_type(59); }
 
          /**
           * This is a set of assets which the account is allowed to have.

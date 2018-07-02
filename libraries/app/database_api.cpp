@@ -779,6 +779,10 @@ vector<account_id_type> database_api::get_account_references( account_id_type ac
 
 vector<account_id_type> database_api_impl::get_account_references( account_id_type account_id )const
 {
+   if (account_object::is_system_account(account_id)) {
+      return vector<account_id_type>();
+   }
+
    const auto& idx = _db.get_index_type<account_index>();
    const auto& aidx = dynamic_cast<const primary_index<account_index>&>(idx);
    const auto& refs = aidx.get_secondary_index<graphene::chain::account_member_index>();
@@ -857,6 +861,9 @@ vector<asset> database_api::get_account_balances(account_id_type id, const flat_
 
 vector<asset> database_api_impl::get_account_balances(account_id_type acnt, const flat_set<asset_id_type>& assets)const
 {
+   if (account_object::is_system_account(acnt)) {
+      return vector<asset>();
+   }
    vector<asset> result;
    if (assets.empty())
    {
