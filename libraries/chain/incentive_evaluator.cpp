@@ -98,10 +98,6 @@ namespace graphene { namespace chain {
             //adjust balance
             db().adjust_balance(obj.owner, asset(op.amount, asset_id_type(0)));
         });
-        // update current supply
-        db().modify(db().get(asset_id_type()).dynamic_data(db()), [op](asset_dynamic_data_object& d) {
-             d.current_supply += op.amount;
-        });
         // update construction capital summary
         db().modify(db().get(construction_capital_summary_id_type()), [it, op](construction_capital_summary_object& o) {
             share_type deposit = it->amount / it->total_periods;

@@ -80,16 +80,8 @@ namespace graphene { namespace chain {
             real128 amount = real128(op.amount.value) * real128(GRAPHENE_DEFAULT_INSTANT_PAYBACL_RATE) / real128(GRAPHENE_ISSUANCE_RATE_SCALE);
             if (acc_obj.is_instant_payback(db().head_block_time())) {    
                 db().adjust_balance(op.account_id, asset(amount.to_uint64(), asset_id_type(0)));
-                // update current supply
-                db().modify(db().get(asset_id_type()).dynamic_data(db()), [op, amount](asset_dynamic_data_object& d) {
-                    d.current_supply += amount.to_uint64();
-                });
             }
             db().adjust_balance(GRAPHENE_MARKET_FOUND_ACCOUNT, asset(amount.to_uint64(), asset_id_type(0)));
-            // update current supply
-            db().modify(db().get(asset_id_type()).dynamic_data(db()), [op, amount](asset_dynamic_data_object& d) {
-                d.current_supply -= op.amount;
-            });
             // update construction capital summary
             db().modify(db().get(construction_capital_summary_id_type()), [op](construction_capital_summary_object& o) {
                 o.count_all_time += 1;

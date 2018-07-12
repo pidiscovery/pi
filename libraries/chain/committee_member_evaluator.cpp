@@ -116,10 +116,6 @@ void_result committee_member_issue_construction_capital_evaluator::do_apply(cons
 { try {
    db().adjust_balance(o.receiver, asset(o.amount, asset_id_type(0)));
    db().adjust_balance(GRAPHENE_CONSTRUCTION_CAPITAL_ACCOUNT, -asset(o.amount, asset_id_type(0)));
-   // update current supply
-   db().modify(db().get(asset_id_type()).dynamic_data(db()), [o](asset_dynamic_data_object& d) {
-      d.current_supply += o.amount;
-   });
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
