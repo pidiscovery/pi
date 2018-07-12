@@ -205,6 +205,18 @@ namespace graphene { namespace chain {
     > construction_capital_rate_vote_index_type;
     typedef generic_index<construction_capital_rate_vote_object, construction_capital_rate_vote_index_type> construction_capital_rate_vote_index;
 
+    class construction_capital_summary_object : public graphene::db::abstract_object<construction_capital_summary_object> {
+    public:
+        static const uint8_t space_id = implementation_ids;
+        static const uint8_t type_id  = impl_construction_capital_summary_object_type;
+        
+        uint64_t count_all_time;
+        uint64_t count_in_life;
+        share_type deposit_all_time;
+        share_type deposit_in_life;
+        share_type profit_all_time;
+    };
+
 }} // graphene::chain
 
 
@@ -230,3 +242,8 @@ FC_REFLECT_DERIVED( graphene::chain::construction_capital_rate_vote_object,
                     (graphene::db::object),
                     (account)(timestamp)(vote_option) 
                 )                
+
+FC_REFLECT_DERIVED( graphene::chain::construction_capital_summary_object,
+                    (graphene::db::object),
+                    (count_all_time)(count_in_life)(deposit_all_time)(deposit_in_life)(profit_all_time)
+                )             

@@ -115,14 +115,14 @@ int main( int argc, char** argv )
 
       //fc::configure_logging( cfg );
 
-      fc::ecc::private_key committee_private_key = fc::ecc::private_key::regenerate(fc::sha256::hash(string("null_key")));
+      // fc::ecc::private_key committee_private_key = fc::ecc::private_key::regenerate(fc::sha256::hash(string("null_key")));
 
-      idump( (key_to_wif( committee_private_key ) ) );
+      // idump( (key_to_wif( committee_private_key ) ) );
 
-      fc::ecc::private_key nathan_private_key = fc::ecc::private_key::regenerate(fc::sha256::hash(string("nathan")));
-      public_key_type nathan_pub_key = nathan_private_key.get_public_key();
-      idump( (nathan_pub_key) );
-      idump( (key_to_wif( nathan_private_key ) ) );
+      // fc::ecc::private_key nathan_private_key = fc::ecc::private_key::regenerate(fc::sha256::hash(string("nathan")));
+      // public_key_type nathan_pub_key = nathan_private_key.get_public_key();
+      // idump( (nathan_pub_key) );
+      // idump( (key_to_wif( nathan_private_key ) ) );
 
       //
       // TODO:  We read wallet_data twice, once in main() to grab the

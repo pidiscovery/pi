@@ -152,6 +152,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       vector<construction_capital_vote_object> get_construction_capital_vote( construction_capital_id_type id )const;
       fc::optional<construction_capital_history_object> get_construction_capital_history( construction_capital_id_type id )const;
       fc::optional<construction_capital_rate_vote_object> get_construction_capital_rate_vote( account_id_type id )const;
+      share_type get_account_construction_capital_sum(account_id_type id)const;
    //private:
       template<typename T>
       void subscribe_to_item( const T& i )const
@@ -1908,6 +1909,20 @@ vector<construction_capital_object> database_api_impl::get_account_construction_
         result.push_back(*it);
     }
     return result;
+}
+
+share_type database_api::get_account_construction_capital_sum(account_id_type id) const {
+    return my->get_account_construction_capital_sum(id);
+}
+
+share_type database_api_impl::get_account_construction_capital_sum(account_id_type id) const {
+    share_type sum = 0;
+    const auto& idx = _db.get_index_type<construction_capital_index>().indices().get<by_account>();
+    for (auto it = idx.lower_bound(id); it != idx.upper_bound(id); ++it) {
+        sum += (it->amount - it->achieved * it->amount / it->total_periods);
+        // result.push_back(*it);
+    }
+    return sum;
 }
 
 fc::optional<construction_capital_object> database_api::get_construction_capital( construction_capital_id_type id )const
