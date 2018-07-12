@@ -101,9 +101,9 @@ namespace graphene { namespace chain {
         // update construction capital summary
         db().modify(db().get(construction_capital_summary_id_type()), [it, op](construction_capital_summary_object& o) {
             share_type deposit = it->amount / it->total_periods;
-            share_type profit = op.amount - it->amount;
-            o.deposit_in_life -= deposit;
-            o.profit_all_time += profit;
+            share_type profit = op.amount - deposit;
+            o.deposit_in_life -= deposit.value;
+            o.profit_all_time += profit.value;
             if (it->achieved >= it->total_periods) {
                 o.count_in_life -= 1;
             }    

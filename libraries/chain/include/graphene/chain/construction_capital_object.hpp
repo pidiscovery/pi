@@ -212,9 +212,9 @@ namespace graphene { namespace chain {
         
         uint64_t count_all_time;
         uint64_t count_in_life;
-        share_type deposit_all_time;
-        share_type deposit_in_life;
-        share_type profit_all_time;
+        fc::uint128 deposit_all_time;
+        fc::uint128 deposit_in_life;
+        fc::uint128 profit_all_time;
     };
 
 }} // graphene::chain

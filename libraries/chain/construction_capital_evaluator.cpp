@@ -86,8 +86,8 @@ namespace graphene { namespace chain {
             db().modify(db().get(construction_capital_summary_id_type()), [op](construction_capital_summary_object& o) {
                 o.count_all_time += 1;
                 o.count_in_life += 1;
-                o.deposit_all_time += op.amount;
-                o.deposit_in_life += op.amount;
+                o.deposit_all_time += op.amount.value;
+                o.deposit_in_life += op.amount.value;
             });
             // all locked shares go to GRAPHENE_CONSTRUCTION_CAPITAL_ACCOUNT
             db().adjust_balance(GRAPHENE_CONSTRUCTION_CAPITAL_ACCOUNT, asset(op.amount, asset_id_type(0)));
