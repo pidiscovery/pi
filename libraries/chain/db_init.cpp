@@ -233,6 +233,8 @@ void database::initialize_indexes()
    add_index< primary_index<construction_capital_vote_index> >();
    add_index< primary_index<limit_order_fee_config_index> >();
    add_index< primary_index<construction_capital_rate_vote_index> >();
+
+   add_index< primary_index<simple_index<construction_capital_summary_object >> >();
 }
 
 void database::init_genesis(const genesis_state_type& genesis_state)
@@ -431,6 +433,14 @@ void database::init_genesis(const genesis_state_type& genesis_state)
       p.dynamic_flags = 0;
       p.witness_budget = 0;
       p.recent_slots_filled = fc::uint128::max_value();
+   });
+   // Create construction capital summary object
+   create<construction_capital_summary_object>([](construction_capital_summary_object& o){
+      o.count_all_time = 0;
+      o.count_in_life = 0;
+      o.deposit_all_time = 0;
+      o.deposit_in_life = 0;
+      o.profit_all_time = 0;
    });
 
    FC_ASSERT( (genesis_state.immutable_parameters.min_witness_count & 1) == 1, "min_witness_count must be odd" );

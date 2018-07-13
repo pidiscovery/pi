@@ -80,10 +80,15 @@ namespace graphene { namespace chain {
             real128 amount = real128(op.amount.value) * real128(GRAPHENE_DEFAULT_INSTANT_PAYBACL_RATE) / real128(GRAPHENE_ISSUANCE_RATE_SCALE);
             if (acc_obj.is_instant_payback(db().head_block_time())) {    
                 db().adjust_balance(op.account_id, asset(amount.to_uint64(), asset_id_type(0)));
-                db().adjust_balance(GRAPHENE_MARKET_FOUND_ACCOUNT, asset(amount.to_uint64(), asset_id_type(0)));
-            } else {
-                db().adjust_balance(GRAPHENE_MARKET_FOUND_ACCOUNT, asset(amount.to_uint64(), asset_id_type(0)));
             }
+            db().adjust_balance(GRAPHENE_MARKET_FOUND_ACCOUNT, asset(amount.to_uint64(), asset_id_type(0)));
+            // update construction capital summary
+            db().modify(db().get(construction_capital_summary_id_type()), [op](construction_capital_summary_object& o) {
+                o.count_all_time += 1;
+                o.count_in_life += 1;
+                o.deposit_all_time += op.amount.value;
+                o.deposit_in_life += op.amount.value;
+            });
             // all locked shares go to GRAPHENE_CONSTRUCTION_CAPITAL_ACCOUNT
             db().adjust_balance(GRAPHENE_CONSTRUCTION_CAPITAL_ACCOUNT, asset(op.amount, asset_id_type(0)));
             return new_cc_object.id;

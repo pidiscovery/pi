@@ -26,6 +26,7 @@
 #include <graphene/chain/protocol/construction_capital.hpp>
 #include <graphene/chain/construction_capital_object.hpp>
 #include <fc/real128.hpp>
+#include <graphene/chain/protocol/types.hpp>
 
 using namespace fc;
 
@@ -97,12 +98,22 @@ namespace graphene { namespace chain {
             //adjust balance
             db().adjust_balance(obj.owner, asset(op.amount, asset_id_type(0)));
         });
+        // update construction capital summary
+        db().modify(db().get(construction_capital_summary_id_type()), [it, op](construction_capital_summary_object& o) {
+            share_type deposit = it->amount / it->total_periods;
+            share_type profit = op.amount - deposit;
+            o.deposit_in_life -= deposit.value;
+            o.profit_all_time += profit.value;
+            if (it->achieved >= it->total_periods) {
+                o.count_in_life -= 1;
+            }    
+        });
         // wlog("incentive run, cc: ${cc}", ("cc", *it));
         //if release of this construction capital is done, 
         if (it->achieved >= it->total_periods) {
             wlog("incentive done, cc: ${cc}", ("cc", *it));
             db().remove(*it);
-        }        
+        }
         return void_result();
     }
 }} // graphene::chain

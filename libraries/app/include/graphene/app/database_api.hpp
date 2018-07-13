@@ -297,6 +297,8 @@ class database_api
        */
       map<string,account_id_type> lookup_accounts(const string& lower_bound_name, uint32_t limit)const;
 
+      share_type get_system_value()const;
+
       //////////////
       // Balances //
       //////////////
@@ -613,6 +615,7 @@ class database_api
       vector<construction_capital_vote_object> get_construction_capital_vote( construction_capital_id_type id )const;
       fc::optional<construction_capital_history_object> get_construction_capital_history( construction_capital_id_type id )const;
       fc::optional<construction_capital_rate_vote_object> get_construction_capital_rate_vote( account_id_type id )const;
+      share_type get_account_construction_capital_sum(account_id_type id) const;
 
    private:
       std::shared_ptr< database_api_impl > my;
@@ -650,6 +653,7 @@ FC_API(graphene::app::database_api,
    (get_config)
    (get_chain_id)
    (get_dynamic_global_properties)
+   (get_system_value)
 
    // Keys
    (get_key_references)
@@ -729,4 +733,5 @@ FC_API(graphene::app::database_api,
    (get_construction_capital_history)
    (get_construction_capital_vote)
    (get_construction_capital_rate_vote)
+   (get_account_construction_capital_sum)
 )
