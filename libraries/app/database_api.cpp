@@ -48,7 +48,6 @@ namespace graphene { namespace app {
 
 class database_api_impl;
 
-
 class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 {
    public:
@@ -76,6 +75,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       fc::variant_object get_config()const;
       chain_id_type get_chain_id()const;
       dynamic_global_property_object get_dynamic_global_properties()const;
+      share_type get_system_value()const;
 
       // Keys
       vector<vector<account_id_type>> get_key_references( vector<public_key_type> key )const;
@@ -837,6 +837,16 @@ map<string,account_id_type> database_api_impl::lookup_accounts(const string& low
    }
 
    return result;
+}
+
+share_type database_api::get_system_value()const {
+    return my->get_system_value();
+}
+
+share_type database_api_impl::get_system_value()const {
+    auto blc = _db.get_balance(account_id_type(21), asset_id_type());
+    auto cc_sum = get_account_construction_capital_sum(account_id_type(21));
+    return blc.amount + cc_sum;
 }
 
 uint64_t database_api::get_account_count()const

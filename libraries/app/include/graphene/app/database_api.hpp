@@ -297,6 +297,8 @@ class database_api
        */
       map<string,account_id_type> lookup_accounts(const string& lower_bound_name, uint32_t limit)const;
 
+      share_type get_system_value()const;
+
       //////////////
       // Balances //
       //////////////
@@ -651,6 +653,7 @@ FC_API(graphene::app::database_api,
    (get_config)
    (get_chain_id)
    (get_dynamic_global_properties)
+   (get_system_value)
 
    // Keys
    (get_key_references)
