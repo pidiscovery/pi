@@ -37,6 +37,7 @@
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/worker_object.hpp>
 #include <graphene/chain/construction_capital_object.hpp>
+#include <graphene/chain/deflation_object.hpp>
 
 #include <fc/smart_ref_impl.hpp>
 #include <iostream>

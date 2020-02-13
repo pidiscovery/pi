@@ -349,7 +349,7 @@ signed_block database::_generate_block(
        
    
 
-   processed_transaction inc_tx;
+   // processed_transaction inc_tx;
    try {
       processed_transaction inc_tx = generate_incentive_transaction();
       if (inc_tx.operations.size() > 0) {
@@ -363,7 +363,7 @@ signed_block database::_generate_block(
 
    } catch (const fc::exception &e) {
          wlog( "Transaction was not processed while generating block due to ${e}", ("e", e) );
-         wlog( "The transaction was ${t}", ("t", inc_tx) );
+         // wlog( "The transaction was ${t}", ("t", inc_tx) );
    }
 
 

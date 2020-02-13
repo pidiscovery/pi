@@ -115,5 +115,5 @@ namespace graphene { namespace chain {
             db().remove(*it);
         }
         return void_result();
-    }
+    } 
 }} // graphene::chain

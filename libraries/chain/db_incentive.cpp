@@ -88,4 +88,16 @@ namespace graphene { namespace chain {
 
         return ptrx;
     }
+
+    signed_transaction database::generate_deflation_transaction() {
+        signed_transaction tx;
+        return tx;
+    }
+
+    processed_transaction database::apply_deflation(const processed_transaction &tx) {
+        transaction_evaluation_state eval_state(this);
+        //process the operations
+        processed_transaction ptrx(tx);
+        return ptrx;
+    }
 }}

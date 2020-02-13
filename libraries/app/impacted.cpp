@@ -237,7 +237,29 @@ struct get_impacted_account_visitor
          }
       }
    }
-   
+
+   void operator()( const deflation_operation& op ) 
+   {
+      // if (_db) {
+      //    auto& index = _db->get_index_type<construction_capital_index>().indices().get<by_id>();
+      //    auto it = index.find(op.ccid);
+      //    if (it != index.end()) {
+      //       _impacted.insert( it->owner );
+      //    }
+      // }
+   }
+
+   void operator()( const account_deflation_operation& op ) 
+   {
+      // if (_db) {
+      //    auto& index = _db->get_index_type<construction_capital_index>().indices().get<by_id>();
+      //    auto it = index.find(op.ccid);
+      //    if (it != index.end()) {
+      //       _impacted.insert( it->owner );
+      //    }
+      // }
+   }   
+
    void operator()( const construction_capital_create_operation& op ) 
    {
         _impacted.insert( op.account_id );

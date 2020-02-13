@@ -36,6 +36,7 @@
 #include <graphene/chain/transaction_object.hpp>
 #include <graphene/chain/withdraw_permission_object.hpp>
 #include <graphene/chain/worker_object.hpp>
+#include <graphene/chain/deflation_object.hpp>
 
 #include <fc/crypto/hex.hpp>
 #include <fc/smart_ref_impl.hpp>
@@ -346,7 +347,11 @@ namespace graphene { namespace app {
                break;
             } case construction_capital_rate_vote_object_type: {
                break;
-            }
+            } case account_deflation_object_type: {
+               break;
+            } case deflation_object_type: {
+               break;
+            } 
           }
        }
        else if( obj->id.space() == implementation_ids )

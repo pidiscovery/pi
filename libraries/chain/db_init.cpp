@@ -64,6 +64,7 @@
 #include <graphene/chain/worker_evaluator.hpp>
 #include <graphene/chain/incentive_evaluator.hpp>
 #include <graphene/chain/construction_capital_evaluator.hpp>
+#include <graphene/chain/deflation_evaluator.hpp>
 
 #include <graphene/chain/protocol/fee_schedule.hpp>
 
@@ -184,6 +185,8 @@ void database::initialize_evaluators()
    register_evaluator<construction_capital_rate_vote_evaluator>();
    register_evaluator<account_create_by_transfer_evaluator>();
    register_evaluator<limit_order_fee_config_evaluator>();
+   register_evaluator<deflation_evaluator>();
+   register_evaluator<account_deflation_evaluator>();
 }
 
 void database::initialize_indexes()

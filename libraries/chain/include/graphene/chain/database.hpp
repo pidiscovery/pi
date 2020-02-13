@@ -389,6 +389,10 @@ namespace graphene { namespace chain {
          signed_transaction generate_incentive_transaction();
          processed_transaction apply_incentive(const processed_transaction &tx);
 
+         //////////////////// db_deflation.cpp ////////////////////
+         signed_transaction generate_deflation_transaction();
+         processed_transaction apply_deflation(const processed_transaction &tx);
+
          ///@}
          /**
           *  This method validates transactions without adding it to the pending state.

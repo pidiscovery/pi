@@ -21,6 +21,7 @@ if( GRAPHENE_DISABLE_UNITY_BUILD )
         db_update.cpp
         db_witness_schedule.cpp
         db_incentive.cpp
+        db_deflation.cpp
       )
    message( STATUS "Graphene database unity build disabled" )
 else( GRAPHENE_DISABLE_UNITY_BUILD )
@@ -59,6 +60,7 @@ add_library( graphene_chain
              protocol/confidential.cpp
              protocol/vote.cpp
              protocol/incentive.cpp
+             protocol/deflation.cpp
              protocol/construction_capital.cpp
 
              genesis_state.cpp
@@ -84,6 +86,7 @@ add_library( graphene_chain
              buyback.cpp
              incentive_evaluator.cpp
              construction_capital_evaluator.cpp
+             deflation_evaluator.cpp
 
              account_object.cpp
              asset_object.cpp

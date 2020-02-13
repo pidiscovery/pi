@@ -29,15 +29,20 @@
 #include <graphene/chain/database.hpp>
 
 namespace graphene { namespace chain {
-    class incentive_evaluator : public evaluator<incentive_evaluator> {
+    class deflation_evaluator : public evaluator<deflation_evaluator> {
     public:
-        typedef incentive_operation operation_type;
+        typedef deflation_operation operation_type;
 
-        void_result do_evaluate( const incentive_operation& o );
-        void_result do_apply( const incentive_operation& o ) ;
+        void_result do_evaluate( const deflation_operation& o );
+        void_result do_apply( const deflation_operation& o ) ;
+    };
 
-//        virtual void pay_fee() override;
+    class account_deflation_evaluator : public evaluator<account_deflation_evaluator> {
+    public:
+        typedef account_deflation_operation operation_type;
 
+        void_result do_evaluate( const account_deflation_operation& o );
+        void_result do_apply( const account_deflation_operation& o ) ;
     };    
 }} // graphene::chain
 

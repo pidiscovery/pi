@@ -22,23 +22,29 @@
  * THE SOFTWARE.
  */
 
-#pragma once
-
-#include <graphene/chain/evaluator.hpp>
+#include <graphene/chain/deflation_evaluator.hpp>
+#include <graphene/chain/protocol/deflation.hpp>
+#include <graphene/chain/deflation_object.hpp>
 #include <graphene/chain/protocol/types.hpp>
-#include <graphene/chain/database.hpp>
+
+using namespace fc;
 
 namespace graphene { namespace chain {
-    class incentive_evaluator : public evaluator<incentive_evaluator> {
-    public:
-        typedef incentive_operation operation_type;
+    void_result deflation_evaluator::do_evaluate( const deflation_operation& op ) {
+        try {
+            return void_result();
+    } FC_CAPTURE_AND_RETHROW((op)) }
 
-        void_result do_evaluate( const incentive_operation& o );
-        void_result do_apply( const incentive_operation& o ) ;
+    void_result deflation_evaluator::do_apply( const deflation_operation& op ) {
+        return void_result();
+    }
 
-//        virtual void pay_fee() override;
+    void_result account_deflation_evaluator::do_evaluate( const account_deflation_operation& op ) {
+        try {
+            return void_result();
+    } FC_CAPTURE_AND_RETHROW((op)) }
 
-    };    
+    void_result account_deflation_evaluator::do_apply( const account_deflation_operation& op ) {
+        return void_result();
+    }
 }} // graphene::chain
-
-

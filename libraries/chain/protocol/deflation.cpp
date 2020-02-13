@@ -21,24 +21,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-
-#pragma once
-
-#include <graphene/chain/evaluator.hpp>
-#include <graphene/chain/protocol/types.hpp>
-#include <graphene/chain/database.hpp>
+#include <graphene/chain/protocol/deflation.hpp>
 
 namespace graphene { namespace chain {
-    class incentive_evaluator : public evaluator<incentive_evaluator> {
-    public:
-        typedef incentive_operation operation_type;
 
-        void_result do_evaluate( const incentive_operation& o );
-        void_result do_apply( const incentive_operation& o ) ;
+    void deflation_operation::validate() const {
+//        FC_ASSERT( !"virtual operation" );
+    }    
 
-//        virtual void pay_fee() override;
+    void account_deflation_operation::validate() const {
+//        FC_ASSERT( !"virtual operation" );
+    }    
 
-    };    
-}} // graphene::chain
-
-
+} } // graphene::chain

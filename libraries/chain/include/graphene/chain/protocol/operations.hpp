@@ -39,6 +39,7 @@
 #include <graphene/chain/protocol/witness.hpp>
 #include <graphene/chain/protocol/worker.hpp>
 #include <graphene/chain/protocol/incentive.hpp>
+#include <graphene/chain/protocol/deflation.hpp>
 #include <graphene/chain/protocol/construction_capital.hpp>
 
 namespace graphene { namespace chain {
@@ -101,7 +102,9 @@ namespace graphene { namespace chain {
             committee_member_grant_instant_payback_operation,
             account_create_by_transfer_operation,
             limit_order_fee_config_operation,
-            construction_capital_rate_vote_operation
+            construction_capital_rate_vote_operation,
+            deflation_operation,
+            account_deflation_operation
          > operation;
 
    /// @} // operations group
