@@ -821,6 +821,16 @@ class wallet_api
        */
       pair<uint32_t,uint32_t> get_exchage_fee_rate(string account, string asset_symbol_a, string asset_symbol_b);
       
+      /** Create a deflation.
+       * @param account the name or id of the account issuing this deflation
+       * @param rate deflation rate
+       * @param broadcast true to broadcast the transaction on the network
+       */
+      signed_transaction create_deflation( string account, 
+                                          uint32_t rate,
+                                          bool broadcast = false
+                                       );
+
       /** Create a construction capital.
        * @param account the name or id of the account creating the construction capital
        * @param amount amount to lock
@@ -1773,6 +1783,7 @@ FC_API( graphene::wallet::wallet_api,
         (set_exchange_fee_conf)
         (get_exchage_fee_rate)
         (create_account_by_transfer)
+        (create_deflation)
         (create_construction_capital)
         (vote_for_construction_capital)
         (vote_for_construction_capital_rate)

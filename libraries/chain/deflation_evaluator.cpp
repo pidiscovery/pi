@@ -27,9 +27,6 @@
 #include <graphene/chain/deflation_object.hpp>
 #include <graphene/chain/protocol/types.hpp>
 
-#define GRAPHENE_MINIMUM_DEFLATION_INTERVAL (3600*24)
-#define GRAPHENE_DEFLATION_RATE_SCALE (100000000)
-
 using namespace fc;
 
 namespace graphene { namespace chain {
@@ -97,7 +94,7 @@ namespace graphene { namespace chain {
                 "deflation is already cleared"
             );
             FC_ASSERT(
-                dflt_it->cursor.instance.value >= op.owner.instance.value,
+                account_id_type(op.owner) < dflt_it->cursor,
                 "deflation for this account-${acc} has been done before",
                 ("acc", op.owner)
             );
@@ -105,7 +102,7 @@ namespace graphene { namespace chain {
             const auto &acc_dflt_it = acc_dflt_idx.find(op.owner);
             if (acc_dflt_it != acc_dflt_idx.end()) {
                 FC_ASSERT(
-                    acc_dflt_it->last_deflation_id.instance.value < op.deflation_id.instance.value,
+                    acc_dflt_it->last_deflation_id < deflation_id_type(op.deflation_id),
                     "accout: ${acc} last_deflation_id: ${acc_dflt_id} is not smaller than deflation: ${dflt_id}",
                     ("acc", op.owner)
                     ("acc_dflt_id", acc_dflt_it->last_deflation_id)
@@ -145,9 +142,7 @@ namespace graphene { namespace chain {
 
         // update account balance
         share_type deflation_amount = 0;
-        if (cleared) {
-            deflation_amount = frozen;
-        } else {
+        if (!cleared) {
             auto balance = db().get_balance(op.owner, asset_id_type(0));
             auto deflation_amount = balance.amount.value * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
         }
@@ -157,7 +152,7 @@ namespace graphene { namespace chain {
 
         db().modify(*dflt_it, [&](deflation_object &obj){
             obj.cursor = op.owner;
-            obj.total_amount += deflation_amount;
+            obj.total_amount += (deflation_amount + frozen);
             if (op.owner == GRAPHENE_DEFLATION_ACCOUNT_END_MARKER) {
                 obj.cleared = true;
             }

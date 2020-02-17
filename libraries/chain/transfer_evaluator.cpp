@@ -26,6 +26,7 @@
 #include <graphene/chain/exceptions.hpp>
 #include <graphene/chain/hardfork.hpp>
 #include <graphene/chain/is_authorized_asset.hpp>
+#include <graphene/chain/deflation_object.hpp>
 
 namespace graphene { namespace chain {
 void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
@@ -64,7 +65,26 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
           );
       }
 
-      bool insufficient_balance = d.get_balance( from_account, asset_type ).amount >= op.amount.amount;
+      // check if there is a deflation in progress
+      share_type dlft_amt = 0;
+      // only native PIC is effect nby deflation
+      if (op.amount.asset_id == asset_id_type(0)) {
+         auto &dflt_idx = db().get_index_type<deflation_index>().indices().get<by_id>();
+         const auto &dflt_it = dflt_idx.rbegin();
+         // have deflation and it's not finished
+         if (dflt_it != dflt_idx.rend() && !dflt_it->cleared) {
+            const auto &acc_dflt_idx = db().get_index_type<account_deflation_index>().indices().get<by_owner>();
+            const auto &acc_dflt_it = acc_dflt_idx.find(op.from);
+            // this account is not finished
+            if (acc_dflt_it == acc_dflt_idx.end() 
+                  || (acc_dflt_it->last_deflation_id < deflation_id_type(dflt_it->id) 
+                     && !acc_dflt_it->cleared)) {
+               dlft_amt = d.get_balance( from_account, asset_type ).amount * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
+            }
+         }
+      }
+
+      bool insufficient_balance = d.get_balance( from_account, asset_type ).amount >= op.amount.amount + dlft_amt;
       FC_ASSERT( insufficient_balance,
                  "Insufficient Balance: ${balance}, unable to transfer '${total_transfer}' from account '${a}' to '${t}'", 
                  ("a",from_account.name)("t",to_account.name)("total_transfer",d.to_pretty_string(op.amount))("balance",d.to_pretty_string(d.get_balance(from_account, asset_type))) );
@@ -76,8 +96,59 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
 
 void_result transfer_evaluator::do_apply( const transfer_operation& o )
 { try {
-   db().adjust_balance( o.from, -o.amount );
-   db().adjust_balance( o.to, o.amount );
+   // process deflation effect
+   asset dlft_from(0, o.amount.asset_id);
+   asset dlft_to(0, o.amount.asset_id);
+   if (o.amount.asset_id == asset_id_type(0)) {
+      auto &dflt_idx = db().get_index_type<deflation_index>().indices().get<by_id>();
+      const auto &dflt_it = dflt_idx.rbegin();
+      // have deflation and it's not finished
+      if (dflt_it != dflt_idx.rend() && !dflt_it->cleared) {
+         const auto &acc_dflt_idx = db().get_index_type<account_deflation_index>().indices().get<by_owner>();
+         // FROM
+         const auto &acc_dflt_it_from = acc_dflt_idx.find(o.from);
+         if (acc_dflt_it_from == acc_dflt_idx.end() 
+               || (acc_dflt_it_from->last_deflation_id < deflation_id_type(dflt_it->id) 
+                  && !acc_dflt_it_from->cleared)) {
+            dlft_from.amount = db().get_balance( o.from, o.amount.asset_id).amount * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
+            if (acc_dflt_it_from == acc_dflt_idx.end()) {
+               db().create<account_deflation_object>([&](account_deflation_object &obj){
+                  obj.owner = o.from;
+                  obj.last_deflation_id = deflation_id_type(0);
+                  obj.frozen = dlft_from.amount;
+                  obj.cleared = true;
+               });
+            } else {
+               db().modify(*acc_dflt_it_from, [&](account_deflation_object &obj){
+                  obj.frozen = dlft_from.amount;
+                  obj.cleared = true;
+               });
+            }
+         }
+         // TO
+         const auto &acc_dflt_it_to = acc_dflt_idx.find(o.to);
+         if (acc_dflt_it_to == acc_dflt_idx.end() 
+               || (acc_dflt_it_to->last_deflation_id < deflation_id_type(dflt_it->id) 
+                  && !acc_dflt_it_to->cleared)) {
+            dlft_to.amount = db().get_balance( o.to, o.amount.asset_id).amount * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
+            if (acc_dflt_it_to == acc_dflt_idx.end()) {
+               db().create<account_deflation_object>([&](account_deflation_object &obj){
+                  obj.owner = o.to;
+                  obj.last_deflation_id = deflation_id_type(0);
+                  obj.frozen = dlft_to.amount;
+                  obj.cleared = true;
+               });
+            } else {
+               db().modify(*acc_dflt_it_to, [&](account_deflation_object &obj){
+                  obj.frozen = dlft_to.amount;
+                  obj.cleared = true;
+               });
+            }
+         }
+      }
+   }
+   db().adjust_balance( o.from, -o.amount - dlft_from );
+   db().adjust_balance( o.to, o.amount - dlft_to );
    return void_result();
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 

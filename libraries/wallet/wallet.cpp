@@ -125,6 +125,7 @@ public:
    std::string operator()(const asset_create_operation& op)const;
    std::string operator()(const incentive_operation& op)const;
    std::string operator()(const construction_capital_create_operation& op)const;
+   std::string operator()(const deflation_operation& op)const;
 };
 
 template<class T>
@@ -1874,6 +1875,22 @@ public:
       return sign_transaction( tx, broadcast );
    } FC_CAPTURE_AND_RETHROW( (account)(amount)(period)(total_periods)(broadcast) ) }
 
+   signed_transaction create_deflation(string account, uint32_t rate, bool broadcast)
+   { try {
+      account_object owner_account = get_account(account);
+      fc::ecc::private_key active_private_key = get_private_key_for_account(owner_account);
+      deflation_operation op;
+      op.issuer = owner_account.id;
+      op.rate = rate;
+
+      signed_transaction tx;
+      tx.operations.push_back( op );
+      set_operation_fees( tx, _remote_db->get_global_properties().parameters.current_fees);
+      tx.validate();
+      
+      return sign_transaction( tx, broadcast );
+   } FC_CAPTURE_AND_RETHROW( (account)(rate)(broadcast) ) }
+
    signed_transaction set_exchange_fee_conf(    string account, 
                                     string asset_symbol_a,
                                     int32_t rate_a, 
@@ -3000,6 +3017,13 @@ std::string operation_printer::operator()(const construction_capital_create_oper
    return fee(op.fee);
 }
 
+std::string operation_printer::operator()(const deflation_operation& op) const
+{
+   out << "Deflation created by " << wallet.get_account(op.issuer).name
+      << " rate:" << op.rate * 100.0 / GRAPHENE_DEFLATION_RATE_SCALE;
+   return fee(op.fee);
+}
+
 std::string operation_result_printer::operator()(const void_result& x) const
 {
    return "";
@@ -3716,6 +3740,11 @@ signed_transaction wallet_api::set_desired_witness_and_committee_member_count(st
 signed_transaction wallet_api::create_construction_capital(string account, string amount, uint32_t period, uint16_t total_periods, bool broadcast) 
 {
    return my->create_construction_capital(account, amount, period, total_periods, broadcast);
+}
+
+signed_transaction wallet_api::create_deflation(string account, uint32_t rate, bool broadcast) 
+{
+   return my->create_deflation(account, rate, broadcast);
 }
 
 signed_transaction wallet_api::set_exchange_fee_conf(string account, 
