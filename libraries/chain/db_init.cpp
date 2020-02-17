@@ -47,6 +47,7 @@
 #include <graphene/chain/witness_schedule_object.hpp>
 #include <graphene/chain/worker_object.hpp>
 #include <graphene/chain/construction_capital_object.hpp>
+#include <graphene/chain/deflation_object.hpp>
 
 #include <graphene/chain/account_evaluator.hpp>
 #include <graphene/chain/asset_evaluator.hpp>
@@ -133,6 +134,12 @@ const uint8_t worker_object::type_id;
 const uint8_t construction_capital_object::space_id;
 const uint8_t construction_capital_object::type_id;
 
+const uint8_t deflation_object::space_id;
+const uint8_t deflation_object::type_id;
+
+const uint8_t account_deflation_object::space_id;
+const uint8_t account_deflation_object::type_id;
+
 void database::initialize_evaluators()
 {
    _operation_evaluators.resize(255);
@@ -216,6 +223,8 @@ void database::initialize_indexes()
    add_index< primary_index<balance_index> >();
    add_index< primary_index<blinded_balance_index> >();
    add_index< primary_index<construction_capital_index> >();
+   add_index< primary_index<deflation_index> >();
+   add_index< primary_index<account_deflation_index> >();
 
    //Implementation object indexes
    add_index< primary_index<transaction_index                             > >();

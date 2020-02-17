@@ -27,24 +27,142 @@
 #include <graphene/chain/deflation_object.hpp>
 #include <graphene/chain/protocol/types.hpp>
 
+#define GRAPHENE_MINIMUM_DEFLATION_INTERVAL (3600*24)
+#define GRAPHENE_DEFLATION_RATE_SCALE (100000000)
+
 using namespace fc;
 
 namespace graphene { namespace chain {
+    
     void_result deflation_evaluator::do_evaluate( const deflation_operation& op ) {
         try {
+            // check issuer
+            FC_ASSERT(
+                op.issuer == GRAPHENE_DEFLATION_ISSUE_ACCOUNT,
+                "only specified account can issue deflation"
+            );
+            // check defaltion rate
+            FC_ASSERT(
+                op.rate > 0 && op.rate < 1 * GRAPHENE_DEFLATION_RATE_SCALE,
+                "deflation rate should in range (0, 100), ${rate} is invalide",
+                ("rate", op.rate)
+            );
+            // check existing deflation tx
+            auto &index = db().get_index_type<deflation_index>().indices().get<by_id>();
+            auto it = index.rbegin();
+            if (it != index.rend()) {
+                // there should not be running deflation
+                FC_ASSERT(
+                    it->cleared == true,
+                    "cannot issue a defaltion when another is in progress - issuer:${issuer}, rate:$(rate)",
+                    ("issuer", op.issuer)
+                    ("rate", op.rate)
+                );
+                // check deflation interval
+                FC_ASSERT(
+                    it->timestamp + GRAPHENE_MINIMUM_DEFLATION_INTERVAL < db().head_block_time(),
+                    "issue defaltion to offen, deflation can be issued after ${t}",
+                    ("t", it->timestamp + GRAPHENE_MINIMUM_DEFLATION_INTERVAL)
+                );
+            }
             return void_result();
     } FC_CAPTURE_AND_RETHROW((op)) }
 
     void_result deflation_evaluator::do_apply( const deflation_operation& op ) {
+        auto &acc_idx = db().get_index_type<account_index>().indices().get<by_id>();
+        account_id_type acc_id = acc_idx.rbegin()->id;
+        const auto &dflt_obj = db().create<deflation_object>( [&]( deflation_object &obj){
+            obj.issuer = op.issuer;
+            obj.rate = op.rate;
+            obj.timestamp = db().head_block_time();
+
+            obj.start = acc_id;
+            obj.cursor = acc_id;
+        });
+
         return void_result();
     }
 
     void_result account_deflation_evaluator::do_evaluate( const account_deflation_operation& op ) {
         try {
+            auto &dflt_idx = db().get_index_type<deflation_index>().indices().get<by_id>();
+            const auto &dflt_it = dflt_idx.find(op.deflation_id);
+            FC_ASSERT(
+                dflt_it != dflt_idx.end(),
+                "deflation object not found for this account deflationm defaltion_object_id:${dflt_id}",
+                ("dflt_id", op.deflation_id)
+            );
+            FC_ASSERT(
+                dflt_it->cleared == false,
+                "deflation is already cleared"
+            );
+            FC_ASSERT(
+                dflt_it->cursor.instance.value >= op.owner.instance.value,
+                "deflation for this account-${acc} has been done before",
+                ("acc", op.owner)
+            );
+            const auto &acc_dflt_idx = db().get_index_type<account_deflation_index>().indices().get<by_owner>();
+            const auto &acc_dflt_it = acc_dflt_idx.find(op.owner);
+            if (acc_dflt_it != acc_dflt_idx.end()) {
+                FC_ASSERT(
+                    acc_dflt_it->last_deflation_id.instance.value < op.deflation_id.instance.value,
+                    "accout: ${acc} last_deflation_id: ${acc_dflt_id} is not smaller than deflation: ${dflt_id}",
+                    ("acc", op.owner)
+                    ("acc_dflt_id", acc_dflt_it->last_deflation_id)
+                    ("dflt_id", op.deflation_id)
+                );
+            }
             return void_result();
     } FC_CAPTURE_AND_RETHROW((op)) }
 
     void_result account_deflation_evaluator::do_apply( const account_deflation_operation& op ) {
+        auto &dflt_idx = db().get_index_type<deflation_index>().indices().get<by_id>();
+        const auto &dflt_it = dflt_idx.find(op.deflation_id);
+
+        const auto &acc_dflt_idx = db().get_index_type<account_deflation_index>().indices().get<by_owner>();
+        const auto &acc_dflt_it = acc_dflt_idx.find(op.owner);
+
+        bool cleared = false;
+        share_type frozen = 0;
+
+        // update account deflation object
+        if (acc_dflt_it != acc_dflt_idx.end()) {
+            cleared = acc_dflt_it->cleared;
+            frozen = acc_dflt_it->frozen;
+            db().modify(*acc_dflt_it, [&](account_deflation_object &obj) {
+                obj.last_deflation_id = op.deflation_id;
+                obj.frozen = 0;
+                obj.cleared = true;
+            });
+        } else {
+            const auto &acc_dflt_obj = db().create<account_deflation_object>( [&]( account_deflation_object &obj){
+                obj.owner = op.owner;
+                obj.last_deflation_id = op.deflation_id;
+                obj.frozen = 0;
+                obj.cleared = true;
+            });
+        }
+
+        // update account balance
+        share_type deflation_amount = 0;
+        if (cleared) {
+            deflation_amount = frozen;
+        } else {
+            auto balance = db().get_balance(op.owner, asset_id_type(0));
+            auto deflation_amount = balance.amount.value * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
+        }
+        if (deflation_amount > 0) {
+            db().adjust_balance(op.owner, -asset(deflation_amount, asset_id_type(0)));
+        }
+
+        db().modify(*dflt_it, [&](deflation_object &obj){
+            obj.cursor = op.owner;
+            obj.total_amount += deflation_amount;
+            if (op.owner == GRAPHENE_DEFLATION_ACCOUNT_END_MARKER) {
+                obj.cleared = true;
+            }
+        });
+
         return void_result();
     }
 }} // graphene::chain

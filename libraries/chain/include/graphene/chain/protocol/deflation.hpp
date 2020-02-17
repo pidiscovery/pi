@@ -39,10 +39,9 @@ namespace graphene { namespace chain {
         
         deflation_operation() {}
 
-        share_type amount;                  //core shares get by this incentive
+        account_id_type issuer;
+        uint32_t rate;
         asset fee;                          //this is virtual operation, no fee is charged
-        // construction_capital_id_type ccid;  //construction capital of this incentive
-        // uint8_t reason;                     //incentive reason: 0-by period; 1-by vote
 
         account_id_type fee_payer() const {
             return GRAPHENE_TEMP_ACCOUNT;
@@ -66,7 +65,7 @@ namespace graphene { namespace chain {
         account_deflation_operation() {}
 
         deflation_id_type deflation_id;
-        share_type amount;                  //core shares get by this incentive
+        account_id_type owner;
         asset fee;                          //this is virtual operation, no fee is charged
 
         account_id_type fee_payer() const {
@@ -83,8 +82,8 @@ namespace graphene { namespace chain {
 
 FC_REFLECT( graphene::chain::deflation_operation::fee_parameters_type, (fee) )
 
-FC_REFLECT( graphene::chain::deflation_operation, (amount)(fee) )
+FC_REFLECT( graphene::chain::deflation_operation, (issuer)(rate)(fee) )
 
 FC_REFLECT( graphene::chain::account_deflation_operation::fee_parameters_type, (fee) )
 
-FC_REFLECT( graphene::chain::account_deflation_operation, (deflation_id)(amount)(fee) )
+FC_REFLECT( graphene::chain::account_deflation_operation, (deflation_id)(owner)(fee) )

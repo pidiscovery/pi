@@ -30,6 +30,46 @@
 
 
 namespace graphene { namespace chain {
+    class deflation_object : public graphene::db::abstract_object<deflation_object> {
+    public:
+        static const uint8_t space_id = protocol_ids;
+        static const uint8_t type_id  = deflation_object_type;
+        
+        fc::time_point_sec timestamp;
+        account_id_type issuer;
+        uint32_t rate; 
+        
+        account_id_type start;
+        account_id_type cursor;
+        bool cleared;
+
+        share_type total_amount;
+    };
+
+    struct by_cursor;
+    typedef multi_index_container<
+        deflation_object,
+        indexed_by<
+            ordered_unique< 
+                tag<by_id>, 
+                member< 
+                    object, 
+                    object_id_type, 
+                    &object::id 
+                > 
+            >,
+            ordered_unique< 
+                tag<by_cursor>, 
+                member< 
+                    deflation_object, 
+                    account_id_type, 
+                    &deflation_object::cursor 
+                > 
+            >
+        >
+    > deflation_index_type;
+    typedef generic_index<deflation_object, deflation_index_type> deflation_index;    
+
     // class account_deflation_object;
     /**
     * @brief This class represents deflation for a specified account.
@@ -43,7 +83,7 @@ namespace graphene { namespace chain {
         static const uint8_t type_id  = account_deflation_object_type;
         
         account_id_type owner;
-        uint64_t round;
+        deflation_id_type last_deflation_id;
         share_type frozen;
         bool cleared;
     };
@@ -72,30 +112,18 @@ namespace graphene { namespace chain {
     > account_deflation_index_type;
     typedef generic_index<account_deflation_object, account_deflation_index_type> account_deflation_index;
 
-    class deflation_object : public graphene::db::abstract_object<deflation_object> {
-    public:
-        static const uint8_t space_id = protocol_ids;
-        static const uint8_t type_id  = deflation_object_type;
-        
-        uint64_t round;
-        bool cleared;
-        account_id_type start;
-        account_id_type current;
-        
-    };
-
 }} // graphene::chain
 
+FC_REFLECT_DERIVED( graphene::chain::deflation_object,
+                    (graphene::db::object),
+                    (timestamp)(issuer)(rate)(cleared)(start)(cursor)(total_amount)
+                )
 
 FC_REFLECT_DERIVED( graphene::chain::account_deflation_object,
                     (graphene::db::object),
                     (owner)
-                    (round)
+                    (last_deflation_id)
                     (frozen)
                     (cleared)
                 )
 
-FC_REFLECT_DERIVED( graphene::chain::deflation_object,
-                    (graphene::db::object),
-                    (round)(cleared)(start)(current)
-                )

@@ -32,6 +32,26 @@ namespace graphene { namespace chain {
     
     signed_transaction database::generate_deflation_transaction() {
         signed_transaction tx;
+
+        const auto &dflt_idx = get_index_type<deflation_index>().indices().get<by_id>();
+        auto upper_it = dflt_idx.rbegin();
+        if (upper_it == dflt_idx.rend()) {
+            // no deflation found
+            return tx;
+        }
+        if (upper_it->cleared) {
+            // already cleared
+            return tx;
+        }
+        int op_cnt;
+        for (account_id_type acc_id = upper_it->cursor; op_cnt < GRAPHENE_DEFAULT_MAX_DEFLATION_OPERATIONS_PER_BLOCK && acc_id != GRAPHENE_DEFLATION_ACCOUNT_END_MARKER; acc_id = account_id_type(acc_id.instance.value - 1)) {
+            op_cnt += 1;
+            account_deflation_operation op;
+            op.deflation_id = upper_it->id;
+            op.owner = acc_id;
+            tx.operations.push_back(op);
+        }
+
         return tx;
     }
 
@@ -39,6 +59,14 @@ namespace graphene { namespace chain {
         transaction_evaluation_state eval_state(this);
         //process the operations
         processed_transaction ptrx(tx);
+        _current_op_in_trx = 0;
+        for( const auto& op : ptrx.operations )
+        {
+            eval_state.operation_results.emplace_back(apply_operation(eval_state, op));
+            ++_current_op_in_trx;
+        }
+        ptrx.operation_results = std::move(eval_state.operation_results);
+
         return ptrx;
     }
 }}
