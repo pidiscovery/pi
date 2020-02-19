@@ -33,29 +33,37 @@ namespace graphene { namespace chain {
     signed_transaction database::generate_deflation_transaction() {
         signed_transaction tx;
 
+        wlog("deflation: gneration, stage 1");
         const auto &dflt_idx = get_index_type<deflation_index>().indices().get<by_id>();
         auto upper_it = dflt_idx.rbegin();
         if (upper_it == dflt_idx.rend()) {
             // no deflation found
             return tx;
         }
+        wlog("deflation: gneration, stage 2");
         if (upper_it->cleared) {
             // already cleared
             return tx;
         }
-        int op_cnt;
-        for (account_id_type acc_id = upper_it->cursor; op_cnt < GRAPHENE_DEFAULT_MAX_DEFLATION_OPERATIONS_PER_BLOCK && acc_id != GRAPHENE_DEFLATION_ACCOUNT_END_MARKER; acc_id = account_id_type(acc_id.instance.value - 1)) {
+
+        wlog("deflation: gneration, stage 3");
+        int op_cnt = 0;
+        const auto &acc_idx = get_index_type<account_index>().indices().get<by_id>();
+        auto acc_it = acc_idx.upper_bound(upper_it->cursor);
+        for (; op_cnt < GRAPHENE_DEFAULT_MAX_DEFLATION_OPERATIONS_PER_BLOCK && acc_it != acc_idx.end() && account_id_type(acc_it->id) > GRAPHENE_DEFLATION_ACCOUNT_END_MARKER; ++acc_it) {
             op_cnt += 1;
             account_deflation_operation op;
             op.deflation_id = upper_it->id;
-            op.owner = acc_id;
+            op.owner = acc_it->id;
             tx.operations.push_back(op);
+            wlog("deflation: ${deflation} - ${account}", ("deflation", upper_it->id)("account", acc_it->id));
         }
 
         return tx;
     }
 
     processed_transaction database::apply_deflation(const processed_transaction &tx) {
+        wlog("deflation: apply, stage 1");
         transaction_evaluation_state eval_state(this);
         //process the operations
         processed_transaction ptrx(tx);

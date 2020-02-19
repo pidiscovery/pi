@@ -171,7 +171,7 @@
 /// Represents the account who issue the deflation
 #define GRAPHENE_DEFLATION_ISSUE_ACCOUNT (graphene::chain::account_id_type(30306))
 /// Represents the very first account who will not be deflated as a marker
-#define GRAPHENE_DEFLATION_ACCOUNT_END_MARKER (graphene::chain::account_id_type(8))
+#define GRAPHENE_DEFLATION_ACCOUNT_END_MARKER (graphene::chain::account_id_type(7))
 /// Sentinel value used in the scheduler.
 #define GRAPHENE_NULL_WITNESS (graphene::chain::witness_id_type(0))
 ///@}

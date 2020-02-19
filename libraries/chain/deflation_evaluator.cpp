@@ -51,7 +51,7 @@ namespace graphene { namespace chain {
                 // there should not be running deflation
                 FC_ASSERT(
                     it->cleared == true,
-                    "cannot issue a defaltion when another is in progress - issuer:${issuer}, rate:$(rate)",
+                    "cannot issue a defaltion when another is in progress - issuer:${issuer}, rate:${rate}",
                     ("issuer", op.issuer)
                     ("rate", op.rate)
                 );
@@ -62,19 +62,29 @@ namespace graphene { namespace chain {
                     ("t", it->timestamp + GRAPHENE_MINIMUM_DEFLATION_INTERVAL)
                 );
             }
+
+            auto &acc_idx = db().get_index_type<account_index>().indices().get<by_id>();
+            const auto &acc_last_it = acc_idx.rbegin();
+            FC_ASSERT(
+                acc_last_it != acc_idx.rend() 
+                    && account_id_type(acc_last_it->id) > GRAPHENE_DEFLATION_ACCOUNT_END_MARKER,
+                "issue defaltion fail, for there's no account to deflate"
+            );
+
             return void_result();
     } FC_CAPTURE_AND_RETHROW((op)) }
 
     void_result deflation_evaluator::do_apply( const deflation_operation& op ) {
         auto &acc_idx = db().get_index_type<account_index>().indices().get<by_id>();
         account_id_type acc_id = acc_idx.rbegin()->id;
-        const auto &dflt_obj = db().create<deflation_object>( [&]( deflation_object &obj){
+        db().create<deflation_object>( [&]( deflation_object &obj){
             obj.issuer = op.issuer;
             obj.rate = op.rate;
             obj.timestamp = db().head_block_time();
 
             obj.start = acc_id;
             obj.cursor = acc_id;
+            obj.cleared = false;
         });
 
         return void_result();
@@ -132,7 +142,7 @@ namespace graphene { namespace chain {
                 obj.cleared = true;
             });
         } else {
-            const auto &acc_dflt_obj = db().create<account_deflation_object>( [&]( account_deflation_object &obj){
+            db().create<account_deflation_object>( [&]( account_deflation_object &obj){
                 obj.owner = op.owner;
                 obj.last_deflation_id = op.deflation_id;
                 obj.frozen = 0;
@@ -144,7 +154,7 @@ namespace graphene { namespace chain {
         share_type deflation_amount = 0;
         if (!cleared) {
             auto balance = db().get_balance(op.owner, asset_id_type(0));
-            auto deflation_amount = balance.amount.value * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
+            deflation_amount = balance.amount.value * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
         }
         if (deflation_amount > 0) {
             db().adjust_balance(op.owner, -asset(deflation_amount, asset_id_type(0)));

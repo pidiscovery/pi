@@ -346,8 +346,6 @@ signed_block database::_generate_block(
    //
    _pending_tx_session.reset();
    _pending_tx_session = _undo_db.start_undo_session();
-       
-   
 
    // processed_transaction inc_tx;
    try {
@@ -362,10 +360,26 @@ signed_block database::_generate_block(
       }
 
    } catch (const fc::exception &e) {
-         wlog( "Transaction was not processed while generating block due to ${e}", ("e", e) );
+         wlog( "incentive transaction was not processed while generating block due to ${e}", ("e", e) );
          // wlog( "The transaction was ${t}", ("t", inc_tx) );
    }
 
+   // processed_transaction dflt_tx;
+   try {
+      processed_transaction dflt_tx = generate_deflation_transaction();
+      if (dflt_tx.operations.size() > 0) {
+         auto temp_session = _undo_db.start_undo_session();
+         processed_transaction ptx = apply_deflation(dflt_tx);
+         temp_session.merge();
+
+         total_block_size += fc::raw::pack_size(ptx);
+         pending_block.transactions.push_back(ptx);
+      }
+
+   } catch (const fc::exception &e) {
+         wlog( "deflation transaction was not processed while generating block due to ${e}", ("e", e) );
+         // wlog( "The transaction was ${t}", ("t", inc_tx) );
+   }
 
    uint64_t postponed_tx_count = 0;
    // pop pending state (reset to head block state)
