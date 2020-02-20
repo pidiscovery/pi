@@ -39,7 +39,7 @@ namespace graphene { namespace chain {
         account_id_type issuer;
         uint32_t rate; 
         
-        account_id_type start;
+        account_id_type last_account;
         account_id_type cursor;
         bool cleared;
 
@@ -116,7 +116,7 @@ namespace graphene { namespace chain {
 
 FC_REFLECT_DERIVED( graphene::chain::deflation_object,
                     (graphene::db::object),
-                    (timestamp)(issuer)(rate)(cleared)(start)(cursor)(total_amount)
+                    (timestamp)(issuer)(rate)(cleared)(last_account)(cursor)(total_amount)
                 )
 
 FC_REFLECT_DERIVED( graphene::chain::account_deflation_object,

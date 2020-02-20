@@ -41,8 +41,8 @@ namespace graphene { namespace chain {
             // check defaltion rate
             FC_ASSERT(
                 op.rate > 0 && op.rate < 1 * GRAPHENE_DEFLATION_RATE_SCALE,
-                "deflation rate should in range (0, 100), ${rate} is invalide",
-                ("rate", op.rate)
+                "deflation rate should in range (0, 100), ${rate}% is invalide",
+                ("rate", 100.0 * op.rate / GRAPHENE_DEFLATION_RATE_SCALE)
             );
             // check existing deflation tx
             auto &index = db().get_index_type<deflation_index>().indices().get<by_id>();
@@ -66,8 +66,9 @@ namespace graphene { namespace chain {
             auto &acc_idx = db().get_index_type<account_index>().indices().get<by_id>();
             const auto &acc_last_it = acc_idx.rbegin();
             FC_ASSERT(
-                acc_last_it != acc_idx.rend() 
-                    && account_id_type(acc_last_it->id) > GRAPHENE_DEFLATION_ACCOUNT_END_MARKER,
+                acc_last_it != acc_idx.rend()
+                    && (account_id_type(acc_last_it->id) > GRAPHENE_DEFLATION_ACCOUNT_START_MARKER
+                        || account_id_type(acc_last_it->id) == GRAPHENE_DEFLATION_ACCOUNT_START_MARKER),
                 "issue defaltion fail, for there's no account to deflate"
             );
 
@@ -76,14 +77,17 @@ namespace graphene { namespace chain {
 
     void_result deflation_evaluator::do_apply( const deflation_operation& op ) {
         auto &acc_idx = db().get_index_type<account_index>().indices().get<by_id>();
-        account_id_type acc_id = acc_idx.rbegin()->id;
+        const auto &acc_last_it = acc_idx.rbegin();
+
+        // auto &acc_idx = db().get_index_type<account_index>().indices().get<by_id>();
+        // account_id_type acc_id = acc_idx.rbegin()->id;
         db().create<deflation_object>( [&]( deflation_object &obj){
             obj.issuer = op.issuer;
             obj.rate = op.rate;
             obj.timestamp = db().head_block_time();
 
-            obj.start = acc_id;
-            obj.cursor = acc_id;
+            obj.last_account = acc_last_it->id;
+            obj.cursor = GRAPHENE_DEFLATION_ACCOUNT_START_MARKER;
             obj.cleared = false;
         });
 
@@ -96,7 +100,7 @@ namespace graphene { namespace chain {
             const auto &dflt_it = dflt_idx.find(op.deflation_id);
             FC_ASSERT(
                 dflt_it != dflt_idx.end(),
-                "deflation object not found for this account deflationm defaltion_object_id:${dflt_id}",
+                "deflation object not found for this account deflation. defaltion_object_id:${dflt_id}",
                 ("dflt_id", op.deflation_id)
             );
             FC_ASSERT(
@@ -104,7 +108,7 @@ namespace graphene { namespace chain {
                 "deflation is already cleared"
             );
             FC_ASSERT(
-                account_id_type(op.owner) < dflt_it->cursor,
+                account_id_type(op.owner) > dflt_it->cursor || account_id_type(op.owner) == dflt_it->cursor,
                 "deflation for this account-${acc} has been done before",
                 ("acc", op.owner)
             );
@@ -161,9 +165,9 @@ namespace graphene { namespace chain {
         }
 
         db().modify(*dflt_it, [&](deflation_object &obj){
-            obj.cursor = op.owner;
+            obj.cursor = op.owner + 1;
             obj.total_amount += (deflation_amount + frozen);
-            if (op.owner == GRAPHENE_DEFLATION_ACCOUNT_END_MARKER) {
+            if (op.owner == dflt_it->last_account) {
                 obj.cleared = true;
             }
         });

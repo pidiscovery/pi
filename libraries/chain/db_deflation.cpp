@@ -33,32 +33,46 @@ namespace graphene { namespace chain {
     signed_transaction database::generate_deflation_transaction() {
         signed_transaction tx;
 
-        wlog("deflation: gneration, stage 1");
         const auto &dflt_idx = get_index_type<deflation_index>().indices().get<by_id>();
-        auto upper_it = dflt_idx.rbegin();
-        if (upper_it == dflt_idx.rend()) {
+        auto dlft_it = dflt_idx.rbegin();
+        if (dlft_it == dflt_idx.rend()) {
             // no deflation found
             return tx;
         }
-        wlog("deflation: gneration, stage 2");
-        if (upper_it->cleared) {
+
+        if (dlft_it->cleared) {
             // already cleared
             return tx;
         }
 
-        wlog("deflation: gneration, stage 3");
         int op_cnt = 0;
         const auto &acc_idx = get_index_type<account_index>().indices().get<by_id>();
-        auto acc_it = acc_idx.upper_bound(upper_it->cursor);
-        for (; op_cnt < GRAPHENE_DEFAULT_MAX_DEFLATION_OPERATIONS_PER_BLOCK && acc_it != acc_idx.end() && account_id_type(acc_it->id) > GRAPHENE_DEFLATION_ACCOUNT_END_MARKER; ++acc_it) {
+        for ( auto acc_it = acc_idx.find(dlft_it->cursor); 
+                op_cnt < 512 //GRAPHENE_DEFAULT_MAX_DEFLATION_OPERATIONS_PER_BLOCK 
+                    && acc_it != acc_idx.end() 
+                    && ( account_id_type(acc_it->id) < dlft_it->last_account 
+                        || account_id_type(acc_it->id) == dlft_it->last_account
+                ); 
+                ++acc_it ) {
             op_cnt += 1;
             account_deflation_operation op;
-            op.deflation_id = upper_it->id;
+            op.deflation_id = dlft_it->id;
             op.owner = acc_it->id;
             tx.operations.push_back(op);
-            wlog("deflation: ${deflation} - ${account}", ("deflation", upper_it->id)("account", acc_it->id));
         }
 
+        ilog("deflation running: ops_in_tx:${op_cnt} ${id}, cursor:${cursor}, last_account:${last_account}, total:${total_amount}", 
+            ("op_cnt", op_cnt)
+            ("id", dlft_it->id)
+            ("cursor", dlft_it->cursor)
+            ("last_account", dlft_it->last_account)
+            ("total_amount", dlft_it->total_amount)
+        );
+
+        //set tx params
+        auto dyn_props = get_dynamic_global_properties();
+        tx.set_reference_block(dyn_props.head_block_id);
+        tx.set_expiration( dyn_props.time + fc::seconds(30) );
         return tx;
     }
 
