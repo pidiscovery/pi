@@ -41,7 +41,7 @@ namespace graphene { namespace chain {
             // check defaltion rate
             FC_ASSERT(
                 op.rate > 0 && op.rate < 1 * GRAPHENE_DEFLATION_RATE_SCALE,
-                "deflation rate should in range (0, 100), ${rate}% is invalide",
+                "deflation rate should in range (0, 100)%, ${rate}% is invalide",
                 ("rate", 100.0 * op.rate / GRAPHENE_DEFLATION_RATE_SCALE)
             );
             // check existing deflation tx
@@ -51,9 +51,8 @@ namespace graphene { namespace chain {
                 // there should not be running deflation
                 FC_ASSERT(
                     it->cleared == true,
-                    "cannot issue a defaltion when another is in progress - issuer:${issuer}, rate:${rate}",
-                    ("issuer", op.issuer)
-                    ("rate", op.rate)
+                    "cannot issue a defaltion when another(${id}) is in progress",
+                    ("id", it->id)
                 );
                 // check deflation interval
                 FC_ASSERT(
@@ -76,12 +75,24 @@ namespace graphene { namespace chain {
     } FC_CAPTURE_AND_RETHROW((op)) }
 
     void_result deflation_evaluator::do_apply( const deflation_operation& op ) {
+        auto &index = db().get_index_type<deflation_index>().indices().get<by_id>();
+        auto it = index.rbegin();
+        if (it == index.rend()) {
+            // create an placeholder object to present none
+            db().create<deflation_object>([&](deflation_object &obj){
+                obj.timestamp = db().head_block_time();;
+                obj.issuer = op.issuer;
+                obj.rate = 0;
+                obj.last_account = GRAPHENE_DEFLATION_ACCOUNT_START_MARKER;
+                obj.cursor = GRAPHENE_DEFLATION_ACCOUNT_START_MARKER;
+                obj.cleared = true;
+                obj.total_amount = 0;
+            });
+        }        
         auto &acc_idx = db().get_index_type<account_index>().indices().get<by_id>();
         const auto &acc_last_it = acc_idx.rbegin();
 
-        // auto &acc_idx = db().get_index_type<account_index>().indices().get<by_id>();
-        // account_id_type acc_id = acc_idx.rbegin()->id;
-        db().create<deflation_object>( [&]( deflation_object &obj){
+        db().create<deflation_object>( [&](deflation_object &obj){
             obj.issuer = op.issuer;
             obj.rate = op.rate;
             obj.timestamp = db().head_block_time();
@@ -107,11 +118,16 @@ namespace graphene { namespace chain {
                 dflt_it->cleared == false,
                 "deflation is already cleared"
             );
+            // FC_ASSERT(
+            //     account_id_type(op.owner) > dflt_it->cursor || account_id_type(op.owner) == dflt_it->cursor,
+            //     "deflation for this account-${acc} has been done before",
+            //     ("acc", op.owner)
+            // );
             FC_ASSERT(
-                account_id_type(op.owner) > dflt_it->cursor || account_id_type(op.owner) == dflt_it->cursor,
-                "deflation for this account-${acc} has been done before",
+                account_id_type(op.owner) == dflt_it->cursor,
+                "deflation for this account-${acc} is in wrong order",
                 ("acc", op.owner)
-            );
+            );            
             const auto &acc_dflt_idx = db().get_index_type<account_deflation_index>().indices().get<by_owner>();
             const auto &acc_dflt_it = acc_dflt_idx.find(op.owner);
             if (acc_dflt_it != acc_dflt_idx.end()) {
@@ -143,14 +159,14 @@ namespace graphene { namespace chain {
             db().modify(*acc_dflt_it, [&](account_deflation_object &obj) {
                 obj.last_deflation_id = op.deflation_id;
                 obj.frozen = 0;
-                obj.cleared = true;
+                obj.cleared = false;
             });
         } else {
             db().create<account_deflation_object>( [&]( account_deflation_object &obj){
                 obj.owner = op.owner;
                 obj.last_deflation_id = op.deflation_id;
                 obj.frozen = 0;
-                obj.cleared = true;
+                obj.cleared = false;
             });
         }
 

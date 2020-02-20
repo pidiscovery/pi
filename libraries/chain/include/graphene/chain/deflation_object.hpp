@@ -57,14 +57,6 @@ namespace graphene { namespace chain {
                     object_id_type, 
                     &object::id 
                 > 
-            >,
-            ordered_unique< 
-                tag<by_cursor>, 
-                member< 
-                    deflation_object, 
-                    account_id_type, 
-                    &deflation_object::cursor 
-                > 
             >
         >
     > deflation_index_type;

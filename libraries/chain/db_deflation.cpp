@@ -48,7 +48,7 @@ namespace graphene { namespace chain {
         int op_cnt = 0;
         const auto &acc_idx = get_index_type<account_index>().indices().get<by_id>();
         for ( auto acc_it = acc_idx.find(dlft_it->cursor); 
-                op_cnt < 512 //GRAPHENE_DEFAULT_MAX_DEFLATION_OPERATIONS_PER_BLOCK 
+                op_cnt < GRAPHENE_DEFAULT_MAX_DEFLATION_OPERATIONS_PER_BLOCK 
                     && acc_it != acc_idx.end() 
                     && ( account_id_type(acc_it->id) < dlft_it->last_account 
                         || account_id_type(acc_it->id) == dlft_it->last_account

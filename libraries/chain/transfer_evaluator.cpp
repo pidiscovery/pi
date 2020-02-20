@@ -67,7 +67,7 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
 
       // check if there is a deflation in progress
       share_type dlft_amt = 0;
-      // only native PIC is effect nby deflation
+      // deflation has effect on native PIC only 
       if (op.amount.asset_id == asset_id_type(0)) {
          auto &dflt_idx = db().get_index_type<deflation_index>().indices().get<by_id>();
          const auto &dflt_it = dflt_idx.rbegin();
@@ -108,7 +108,7 @@ void_result transfer_evaluator::do_apply( const transfer_operation& o )
          // FROM
          const auto &acc_dflt_it_from = acc_dflt_idx.find(o.from);
          if (acc_dflt_it_from == acc_dflt_idx.end() 
-               || (acc_dflt_it_from->last_deflation_id < deflation_id_type(dflt_it->id) 
+               || (acc_dflt_it_from->last_deflation_id < deflation_id_type(dflt_it->id)
                   && !acc_dflt_it_from->cleared)) {
             dlft_from.amount = db().get_balance( o.from, o.amount.asset_id).amount * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
             if (acc_dflt_it_from == acc_dflt_idx.end()) {
