@@ -153,6 +153,12 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       fc::optional<construction_capital_history_object> get_construction_capital_history( construction_capital_id_type id )const;
       fc::optional<construction_capital_rate_vote_object> get_construction_capital_rate_vote( account_id_type id )const;
       share_type get_account_construction_capital_sum(account_id_type id)const;
+
+      // Deflation
+      fc::optional<deflation_object> get_latest_deflation()const;
+      fc::optional<deflation_object> get_deflation( deflation_id_type id )const;
+      fc::optional<account_deflation_object> get_account_deflation( account_id_type id )const;
+
    //private:
       template<typename T>
       void subscribe_to_item( const T& i )const
@@ -2022,6 +2028,51 @@ fc::optional<construction_capital_rate_vote_object> database_api_impl::get_const
         }
         return {};
     }
+}
+
+fc::optional<deflation_object> database_api::get_latest_deflation()const
+{
+   return my->get_latest_deflation();
+}
+
+fc::optional<deflation_object> database_api_impl::get_latest_deflation()const
+{
+   const auto& idx = _db.get_index_type<deflation_index>().indices().get<by_id>();
+   auto it = idx.rbegin();
+   if (it != idx.rend()) {
+      return *it;
+   }
+   return {};
+}
+
+fc::optional<deflation_object> database_api::get_deflation( deflation_id_type id )const
+{
+    return my->get_deflation(id);
+}
+
+fc::optional<deflation_object> database_api_impl::get_deflation( deflation_id_type id )const
+{
+   const auto& idx = _db.get_index_type<deflation_index>().indices().get<by_id>();
+   auto it = idx.find(id);
+   if (it != idx.end()) {
+      return *it;
+   }
+   return {};   
+}
+
+fc::optional<account_deflation_object> database_api::get_account_deflation( account_id_type id )const
+{
+    return my->get_account_deflation(id);
+}
+
+fc::optional<account_deflation_object> database_api_impl::get_account_deflation( account_id_type id )const
+{
+   const auto& idx = _db.get_index_type<account_deflation_index>().indices().get<by_owner>();
+   auto it = idx.find(id);
+   if (it != idx.end()) {
+      return *it;
+   }
+   return {};   
 }
 
 //////////////////////////////////////////////////////////////////////

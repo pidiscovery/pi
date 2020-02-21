@@ -79,7 +79,8 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
             if (acc_dflt_it == acc_dflt_idx.end() 
                   || (acc_dflt_it->last_deflation_id < deflation_id_type(dflt_it->id) 
                      && !acc_dflt_it->cleared)) {
-               dlft_amt = d.get_balance( from_account, asset_type ).amount * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
+               fc::uint128_t amt = fc::uint128_t(d.get_balance( from_account, asset_type ).amount.value) * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
+               dlft_amt = amt.to_uint64();
             }
          }
       }
@@ -110,7 +111,8 @@ void_result transfer_evaluator::do_apply( const transfer_operation& o )
          if (acc_dflt_it_from == acc_dflt_idx.end() 
                || (acc_dflt_it_from->last_deflation_id < deflation_id_type(dflt_it->id)
                   && !acc_dflt_it_from->cleared)) {
-            dlft_from.amount = db().get_balance( o.from, o.amount.asset_id).amount * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
+            fc::uint128_t dlft_amt = fc::uint128_t(db().get_balance(o.from, o.amount.asset_id).amount.value) * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
+            dlft_from.amount = dlft_amt.to_uint64();
             if (acc_dflt_it_from == acc_dflt_idx.end()) {
                db().create<account_deflation_object>([&](account_deflation_object &obj){
                   obj.owner = o.from;
@@ -130,7 +132,8 @@ void_result transfer_evaluator::do_apply( const transfer_operation& o )
          if (acc_dflt_it_to == acc_dflt_idx.end() 
                || (acc_dflt_it_to->last_deflation_id < deflation_id_type(dflt_it->id) 
                   && !acc_dflt_it_to->cleared)) {
-            dlft_to.amount = db().get_balance( o.to, o.amount.asset_id).amount * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
+            fc::uint128_t dlft_amt = fc::uint128_t(db().get_balance( o.to, o.amount.asset_id).amount.value) * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;;
+            dlft_to.amount = dlft_amt.to_uint64();
             if (acc_dflt_it_to == acc_dflt_idx.end()) {
                db().create<account_deflation_object>([&](account_deflation_object &obj){
                   obj.owner = o.to;

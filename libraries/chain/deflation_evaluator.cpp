@@ -93,13 +93,14 @@ namespace graphene { namespace chain {
         const auto &acc_last_it = acc_idx.rbegin();
 
         db().create<deflation_object>( [&](deflation_object &obj){
+            obj.timestamp = db().head_block_time();
             obj.issuer = op.issuer;
             obj.rate = op.rate;
-            obj.timestamp = db().head_block_time();
 
             obj.last_account = acc_last_it->id;
             obj.cursor = GRAPHENE_DEFLATION_ACCOUNT_START_MARKER;
             obj.cleared = false;
+            obj.total_amount = 0;
         });
 
         return void_result();
@@ -174,7 +175,8 @@ namespace graphene { namespace chain {
         share_type deflation_amount = 0;
         if (!cleared) {
             auto balance = db().get_balance(op.owner, asset_id_type(0));
-            deflation_amount = balance.amount.value * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
+            uint128_t amount = uint128_t(balance.amount.value)* dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
+            deflation_amount = amount.to_uint64();
         }
         if (deflation_amount > 0) {
             db().adjust_balance(op.owner, -asset(deflation_amount, asset_id_type(0)));

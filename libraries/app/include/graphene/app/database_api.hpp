@@ -41,6 +41,7 @@
 #include <graphene/chain/worker_object.hpp>
 #include <graphene/chain/witness_object.hpp>
 #include <graphene/chain/construction_capital_object.hpp>
+#include <graphene/chain/deflation_object.hpp>
 
 #include <graphene/market_history/market_history_plugin.hpp>
 #include <graphene/incentive_history/incentive_history_plugin.hpp>
@@ -617,6 +618,13 @@ class database_api
       fc::optional<construction_capital_rate_vote_object> get_construction_capital_rate_vote( account_id_type id )const;
       share_type get_account_construction_capital_sum(account_id_type id) const;
 
+      //////////////////////////////////////
+      // Deflation                        //
+      //////////////////////////////////////
+      fc::optional<deflation_object> get_latest_deflation()const;
+      fc::optional<deflation_object> get_deflation( deflation_id_type id )const;
+      fc::optional<account_deflation_object> get_account_deflation( account_id_type id )const;
+
    private:
       std::shared_ptr< database_api_impl > my;
 };
@@ -727,11 +735,16 @@ FC_API(graphene::app::database_api,
    // Blinded balances
    (get_blinded_balances)
 
-   //Incentive & Construction Capital
+   // Incentive & Construction Capital
    (get_account_construction_capital)
    (get_construction_capital)
    (get_construction_capital_history)
    (get_construction_capital_vote)
    (get_construction_capital_rate_vote)
    (get_account_construction_capital_sum)
+
+   // Deflation
+   (get_latest_deflation)
+   (get_deflation)
+   (get_account_deflation)
 )

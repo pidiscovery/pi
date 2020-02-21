@@ -126,6 +126,7 @@ public:
    std::string operator()(const incentive_operation& op)const;
    std::string operator()(const construction_capital_create_operation& op)const;
    std::string operator()(const deflation_operation& op)const;
+   std::string operator()(const account_deflation_operation& op)const;
 };
 
 template<class T>
@@ -3021,6 +3022,13 @@ std::string operation_printer::operator()(const deflation_operation& op) const
 {
    out << "Deflation created by " << wallet.get_account(op.issuer).name
       << " rate:" << op.rate * 100.0 / GRAPHENE_DEFLATION_RATE_SCALE;
+   return fee(op.fee);
+}
+
+std::string operation_printer::operator()(const account_deflation_operation& op) const
+{
+   out << "Account deflation - " << string(object_id_type(op.deflation_id)) << " owner:" << wallet.get_account(op.owner).name
+      << " amount:" << wallet.get_asset(asset_id_type(0)).amount_to_pretty_string(op.amount);
    return fee(op.fee);
 }
 

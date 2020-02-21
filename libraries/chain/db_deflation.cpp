@@ -45,6 +45,8 @@ namespace graphene { namespace chain {
             return tx;
         }
 
+        const auto &acc_dflt_idx = get_index_type<account_deflation_index>().indices().get<by_owner>();
+        
         int op_cnt = 0;
         const auto &acc_idx = get_index_type<account_index>().indices().get<by_id>();
         for ( auto acc_it = acc_idx.find(dlft_it->cursor); 
@@ -58,6 +60,17 @@ namespace graphene { namespace chain {
             account_deflation_operation op;
             op.deflation_id = dlft_it->id;
             op.owner = acc_it->id;
+
+            
+
+            const auto &acc_dflt_it = acc_dflt_idx.find(acc_it->id);
+            if (acc_dflt_it != acc_dflt_idx.end() && acc_dflt_it->cleared) {
+                op.amount = acc_dflt_it->frozen;
+            } else {
+                uint128_t amount = uint128_t(get_balance(op.owner, asset_id_type(0)).amount.value)* dlft_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
+                op.amount = int64_t(amount.to_uint64());
+            }
+
             tx.operations.push_back(op);
         }
 
@@ -77,7 +90,7 @@ namespace graphene { namespace chain {
     }
 
     processed_transaction database::apply_deflation(const processed_transaction &tx) {
-        wlog("deflation: apply, stage 1");
+        // wlog("deflation: apply, stage 1");
         transaction_evaluation_state eval_state(this);
         //process the operations
         processed_transaction ptrx(tx);
