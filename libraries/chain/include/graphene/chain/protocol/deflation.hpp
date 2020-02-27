@@ -39,12 +39,13 @@ namespace graphene { namespace chain {
         
         deflation_operation() {}
 
+        asset fee;                          //this is virtual operation, no fee is charged
         account_id_type issuer;
         uint32_t rate;
-        asset fee;                          //this is virtual operation, no fee is charged
+        
 
         account_id_type fee_payer() const {
-            return GRAPHENE_TEMP_ACCOUNT;
+            return issuer;
         }
 
         void validate() const;
@@ -64,9 +65,10 @@ namespace graphene { namespace chain {
         
         account_deflation_operation() {}
 
+        asset fee;                          //this is virtual operation, no fee is charged
         deflation_id_type deflation_id;
         account_id_type owner;
-        asset fee;                          //this is virtual operation, no fee is charged
+        
 
         share_type amount;  // only for history detail
 
@@ -84,8 +86,8 @@ namespace graphene { namespace chain {
 
 FC_REFLECT( graphene::chain::deflation_operation::fee_parameters_type, (fee) )
 
-FC_REFLECT( graphene::chain::deflation_operation, (issuer)(rate)(fee) )
+FC_REFLECT( graphene::chain::deflation_operation, (fee)(issuer)(rate) )
 
 FC_REFLECT( graphene::chain::account_deflation_operation::fee_parameters_type, (fee) )
 
-FC_REFLECT( graphene::chain::account_deflation_operation, (deflation_id)(owner)(fee)(amount) )
+FC_REFLECT( graphene::chain::account_deflation_operation, (fee)(deflation_id)(owner)(amount) )
