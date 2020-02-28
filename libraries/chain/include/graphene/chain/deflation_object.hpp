@@ -104,6 +104,50 @@ namespace graphene { namespace chain {
     > account_deflation_index_type;
     typedef generic_index<account_deflation_object, account_deflation_index_type> account_deflation_index;
 
+
+    // class order_deflation_object;
+    /**
+    * @brief This class represents deflation for a specified order.
+    * @ingroup object
+    * @ingroup protocol
+    *
+    */
+    class order_deflation_object : public graphene::db::abstract_object<order_deflation_object> {
+    public:
+        static const uint8_t space_id = protocol_ids;
+        static const uint8_t type_id  = order_deflation_object_type;
+        
+        limit_order_id_type order;
+        deflation_id_type last_deflation_id;
+        // share_type frozen;
+        // bool cleared;
+    };
+
+    struct by_order;
+    typedef multi_index_container<
+        order_deflation_object,
+        indexed_by<
+            ordered_unique< 
+                tag<by_id>, 
+                member< 
+                    object, 
+                    object_id_type, 
+                    &object::id 
+                > 
+            >,
+            ordered_unique< 
+                tag<by_order>, 
+                member< 
+                    order_deflation_object, 
+                    limit_order_id_type, 
+                    &order_deflation_object::order
+                > 
+            >
+        >
+    > order_deflation_index_type;
+    typedef generic_index<order_deflation_object, order_deflation_index_type> order_deflation_index;
+
+
 }} // graphene::chain
 
 FC_REFLECT_DERIVED( graphene::chain::deflation_object,
@@ -118,4 +162,10 @@ FC_REFLECT_DERIVED( graphene::chain::account_deflation_object,
                     (frozen)
                     (cleared)
                 )
+
+FC_REFLECT_DERIVED( graphene::chain::order_deflation_object,
+                    (graphene::db::object),
+                    (order)
+                    (last_deflation_id)
+                )                
 

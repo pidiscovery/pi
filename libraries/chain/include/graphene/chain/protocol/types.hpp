@@ -140,6 +140,7 @@ namespace graphene { namespace chain {
       construction_capital_rate_vote_object_type,
       account_deflation_object_type,
       deflation_object_type,
+      order_deflation_object_type,
       OBJECT_TYPE_COUNT ///< Sentry value which contains the number of different object types
    };
 
@@ -188,6 +189,7 @@ namespace graphene { namespace chain {
    class construction_capital_rate_vote_object;
    class account_deflation_object;
    class deflation_object;
+   class order_deflation_object;
 
    typedef object_id< protocol_ids, account_object_type,            account_object>               account_id_type;
    typedef object_id< protocol_ids, asset_object_type,              asset_object>                 asset_id_type;
@@ -208,6 +210,7 @@ namespace graphene { namespace chain {
    typedef object_id< protocol_ids, construction_capital_vote_object_type, construction_capital_vote_object >    construction_capital_vote_id_type;
    typedef object_id< protocol_ids, account_deflation_object_type, account_deflation_object >    account_deflation_id_type;
    typedef object_id< protocol_ids, deflation_object_type, deflation_object >    deflation_id_type;
+   typedef object_id< protocol_ids, order_deflation_object_type, order_deflation_object >    order_deflation_id_type;
 
    // implementation types
    class global_property_object;
@@ -365,6 +368,7 @@ FC_REFLECT_ENUM( graphene::chain::object_type,
                  (construction_capital_rate_vote_object_type)
                  (account_deflation_object_type)
                  (deflation_object_type)
+                 (order_deflation_object_type)
                  (OBJECT_TYPE_COUNT)
                )
 FC_REFLECT_ENUM( graphene::chain::impl_object_type,

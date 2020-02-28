@@ -104,7 +104,8 @@ namespace graphene { namespace chain {
             limit_order_fee_config_operation,
             construction_capital_rate_vote_operation,
             deflation_operation,
-            account_deflation_operation
+            account_deflation_operation,
+            order_deflation_operation
          > operation;
 
    /// @} // operations group

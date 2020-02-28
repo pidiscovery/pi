@@ -56,7 +56,7 @@ namespace graphene { namespace chain {
 
    /**
     * @ingroup operations
-    * @brief Generate an accout deflation
+    * @brief Generate an account deflation
     *
     * This operation is used to generate a deflation for a specified account
     */    
@@ -82,6 +82,33 @@ namespace graphene { namespace chain {
         share_type      calculate_fee(const fee_parameters_type& k)const { return 0; }
     };
 
+   /**
+    * @ingroup operations
+    * @brief Generate an order deflation
+    *
+    * This operation is used to generate a deflation for a specified account
+    */    
+    struct order_deflation_operation : public base_operation {
+        struct fee_parameters_type {uint64_t fee = 0; };
+        
+        order_deflation_operation() {}
+
+        asset fee;                          //this is virtual operation, no fee is charged
+        deflation_id_type deflation_id;
+        limit_order_id_type order;
+
+        share_type amount;                  // only for history detail
+
+        account_id_type fee_payer() const {
+            return GRAPHENE_TEMP_ACCOUNT;
+        }
+
+        void validate() const;
+
+        /// This is a virtual operation; there is no fee
+        share_type      calculate_fee(const fee_parameters_type& k)const { return 0; }
+    };
+
 }} // graphene::chain
 
 FC_REFLECT( graphene::chain::deflation_operation::fee_parameters_type, (fee) )
@@ -91,3 +118,7 @@ FC_REFLECT( graphene::chain::deflation_operation, (fee)(issuer)(rate) )
 FC_REFLECT( graphene::chain::account_deflation_operation::fee_parameters_type, (fee) )
 
 FC_REFLECT( graphene::chain::account_deflation_operation, (fee)(deflation_id)(owner)(amount) )
+
+FC_REFLECT( graphene::chain::order_deflation_operation::fee_parameters_type, (fee) )
+
+FC_REFLECT( graphene::chain::order_deflation_operation, (fee)(deflation_id)(order)(amount) )

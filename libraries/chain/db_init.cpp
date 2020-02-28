@@ -140,6 +140,9 @@ const uint8_t deflation_object::type_id;
 const uint8_t account_deflation_object::space_id;
 const uint8_t account_deflation_object::type_id;
 
+const uint8_t order_deflation_object::space_id;
+const uint8_t order_deflation_object::type_id;
+
 void database::initialize_evaluators()
 {
    _operation_evaluators.resize(255);

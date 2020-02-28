@@ -351,6 +351,8 @@ namespace graphene { namespace app {
                break;
             } case deflation_object_type: {
                break;
+            } case order_deflation_object_type: {
+               break;
             } 
           }
        }

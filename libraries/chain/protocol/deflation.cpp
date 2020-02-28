@@ -26,11 +26,12 @@
 namespace graphene { namespace chain {
 
     void deflation_operation::validate() const {
-//        FC_ASSERT( !"virtual operation" );
     }    
 
     void account_deflation_operation::validate() const {
-//        FC_ASSERT( !"virtual operation" );
-    }    
+    }   
+
+    void order_deflation_operation::validate() const {
+    }        
 
 } } // graphene::chain

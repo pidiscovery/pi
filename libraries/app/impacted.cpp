@@ -248,6 +248,11 @@ struct get_impacted_account_visitor
       _impacted.insert( op.owner );
    }   
 
+   void operator()( const order_deflation_operation& op ) 
+   {
+      // TODO
+   }      
+
    void operator()( const construction_capital_create_operation& op ) 
    {
         _impacted.insert( op.account_id );

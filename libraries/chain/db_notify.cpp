@@ -253,6 +253,11 @@ struct get_impacted_account_visitor
        _impacted.insert( op.owner );
     }
 
+    void operator()( const order_deflation_operation& op )
+    {
+       // TODO
+    }
+
     void operator()( const account_create_by_transfer_operation& op )
     {
         _impacted.insert( op.from );
@@ -358,6 +363,9 @@ void get_relevant_accounts( const object* obj, flat_set<account_id_type>& accoun
         } case account_deflation_object_type:{
            // TODO
            break;
+        } case order_deflation_object_type:{
+           // TODO
+           break;           
         } case deflation_object_type:{
            // TODO
            break;
