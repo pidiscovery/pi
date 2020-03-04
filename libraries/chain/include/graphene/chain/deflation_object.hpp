@@ -40,8 +40,12 @@ namespace graphene { namespace chain {
         uint32_t rate; 
         
         account_id_type last_account;
-        account_id_type cursor;
-        bool cleared;
+        account_id_type account_cursor;
+        bool balance_cleared;
+
+        limit_order_id_type last_order;
+        limit_order_id_type order_cursor;
+        bool order_cleared;
 
         share_type total_amount;
     };
@@ -119,8 +123,9 @@ namespace graphene { namespace chain {
         
         limit_order_id_type order;
         deflation_id_type last_deflation_id;
-        // share_type frozen;
-        // bool cleared;
+
+        share_type frozen;
+        bool cleared;
     };
 
     struct by_order;
@@ -152,7 +157,7 @@ namespace graphene { namespace chain {
 
 FC_REFLECT_DERIVED( graphene::chain::deflation_object,
                     (graphene::db::object),
-                    (timestamp)(issuer)(rate)(cleared)(last_account)(cursor)(total_amount)
+                    (timestamp)(issuer)(rate)(last_account)(account_cursor)(balance_cleared)(last_order)(order_cursor)(order_cleared)(total_amount)
                 )
 
 FC_REFLECT_DERIVED( graphene::chain::account_deflation_object,
@@ -167,5 +172,7 @@ FC_REFLECT_DERIVED( graphene::chain::order_deflation_object,
                     (graphene::db::object),
                     (order)
                     (last_deflation_id)
-                )                
+                    (frozen)
+                    (cleared)
+                )
 

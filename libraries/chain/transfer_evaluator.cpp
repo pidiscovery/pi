@@ -72,7 +72,7 @@ void_result transfer_evaluator::do_evaluate( const transfer_operation& op )
          auto &dflt_idx = db().get_index_type<deflation_index>().indices().get<by_id>();
          const auto &dflt_it = dflt_idx.rbegin();
          // have deflation and it's not finished
-         if (dflt_it != dflt_idx.rend() && !dflt_it->cleared) {
+         if (dflt_it != dflt_idx.rend() && !dflt_it->balance_cleared) {
             const auto &acc_dflt_idx = db().get_index_type<account_deflation_index>().indices().get<by_owner>();
             const auto &acc_dflt_it = acc_dflt_idx.find(op.from);
             // this account is not finished
@@ -104,7 +104,7 @@ void_result transfer_evaluator::do_apply( const transfer_operation& o )
       auto &dflt_idx = db().get_index_type<deflation_index>().indices().get<by_id>();
       const auto &dflt_it = dflt_idx.rbegin();
       // have deflation and it's not finished
-      if (dflt_it != dflt_idx.rend() && !dflt_it->cleared) {
+      if (dflt_it != dflt_idx.rend() && !dflt_it->balance_cleared) {
          const auto &acc_dflt_idx = db().get_index_type<account_deflation_index>().indices().get<by_owner>();
          // FROM
          const auto &acc_dflt_it_from = acc_dflt_idx.find(o.from);

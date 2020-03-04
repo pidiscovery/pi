@@ -43,7 +43,15 @@ namespace graphene { namespace chain {
 
         void_result do_evaluate( const account_deflation_operation& o );
         void_result do_apply( const account_deflation_operation& o ) ;
-    };    
+    };
+
+    class order_deflation_evaluator : public evaluator<order_deflation_evaluator> {
+    public:
+        typedef order_deflation_operation operation_type;
+
+        void_result do_evaluate( const order_deflation_operation& o );
+        void_result do_apply( const order_deflation_operation& o ) ;
+    };
 }} // graphene::chain
 
 

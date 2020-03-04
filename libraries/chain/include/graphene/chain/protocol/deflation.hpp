@@ -97,6 +97,7 @@ namespace graphene { namespace chain {
         deflation_id_type deflation_id;
         limit_order_id_type order;
 
+        account_id_type owner;
         share_type amount;                  // only for history detail
 
         account_id_type fee_payer() const {
@@ -121,4 +122,4 @@ FC_REFLECT( graphene::chain::account_deflation_operation, (fee)(deflation_id)(ow
 
 FC_REFLECT( graphene::chain::order_deflation_operation::fee_parameters_type, (fee) )
 
-FC_REFLECT( graphene::chain::order_deflation_operation, (fee)(deflation_id)(order)(amount) )
+FC_REFLECT( graphene::chain::order_deflation_operation, (fee)(deflation_id)(order)(owner)(amount) )

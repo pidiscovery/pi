@@ -29,6 +29,7 @@
 #include <graphene/chain/hardfork.hpp>
 #include <graphene/chain/market_object.hpp>
 #include <fc/real128.hpp>
+#include <graphene/chain/deflation_object.hpp>
 
 using namespace fc;
 
@@ -183,6 +184,36 @@ bool database::apply_order(const limit_order_object& new_order_object, bool allo
    while( !finished && limit_itr != limit_end )
    {
       auto old_limit_itr = limit_itr;
+      // order deflation check here
+      if (old_limit_itr->sell_price.base.asset_id == asset_id_type(0)) {
+         auto &dflt_idx = get_index_type<deflation_index>().indices().get<by_id>();
+         const auto &dflt_it = dflt_idx.rbegin();
+         // a deflation is running & order deflation not finished
+         if (dflt_it != dflt_idx.rend() && !dflt_it->order_cleared) {
+            const auto &order_dflt_idx = get_index_type<order_deflation_index>().indices().get<by_order>();
+            auto order_dflt_it = order_dflt_idx.find(old_limit_itr->id);
+            // order_deflation_object2 not found or it has done deflation this round
+            if (order_dflt_it == order_dflt_idx.end() || (order_dflt_it->last_deflation_id < deflation_id_type(dflt_it->id) && !order_dflt_it->cleared)) {
+               uint128_t amount = uint128_t(old_limit_itr->for_sale.value) * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
+               share_type deflation_amount = int64_t(amount.to_uint64());               
+               if (deflation_amount > 0) {
+                  if (order_dflt_it == order_dflt_idx.end()) {
+                     create<order_deflation_object>([&](order_deflation_object &obj){
+                        obj.order = old_limit_itr->id;
+                        obj.frozen = deflation_amount;
+                        obj.cleared = true;                     
+                     });
+                  } else {
+                     modify(*order_dflt_it, [&](order_deflation_object &obj){
+                        obj.frozen = deflation_amount;
+                        obj.cleared = true;                     
+                     });
+                  }
+                  pay_order(old_limit_itr->seller(*this), asset(0), asset(deflation_amount));
+               }
+            }
+         }
+      }
       ++limit_itr;
       // match returns 2 when only the old order was fully filled. In this case, we keep matching; otherwise, we stop.
       finished = (match(new_order_object, *old_limit_itr, old_limit_itr->sell_price) != 2);
