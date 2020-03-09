@@ -52,8 +52,9 @@ namespace graphene { namespace chain {
             const auto &order_dflt_idx = get_index_type<order_deflation_index>().indices().get<by_order>();
             const auto &order_idx = get_index_type<limit_order_index>().indices().get<by_id>();
             auto order_it = order_idx.lower_bound(dlft_it->order_cursor);
-            if (order_it == order_idx.end()) {
+            if (order_it == order_idx.end() || limit_order_id_type(order_it->id) > dlft_it->last_order) {
                 // this check is necessary for last_order may be cleared by now
+                ilog("deflation: last_order has been passed.");
                 modify(*dlft_it, [&](deflation_object &obj){
                     obj.order_cleared = true;
                 });

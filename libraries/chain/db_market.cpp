@@ -123,7 +123,7 @@ void database::cancel_order( const limit_order_object& order, bool create_virtua
             && (dlft_it->order_cursor < limit_order_id_type(order.id) || dlft_it->order_cursor == limit_order_id_type(order.id))) {
          const auto &order_dflt_idx = get_index_type<order_deflation_index>().indices().get<by_order>();
          auto order_dflt_it = order_dflt_idx.find(order.id);
-         if (order_dflt_it == order_dflt_idx.end() ||  !order_dflt_it->cleared) {
+         if (order_dflt_it == order_dflt_idx.end() || !order_dflt_it->cleared) {
             uint128_t amount = uint128_t(order.for_sale.value) * dlft_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
             deflation.amount = int64_t(amount.to_uint64());
 
@@ -143,20 +143,6 @@ void database::cancel_order( const limit_order_object& order, bool create_virtua
             if (order_dflt_it != order_dflt_idx.end()) {
                remove(*order_dflt_it);
             }
-
-            // if (order_dflt_it == order_dflt_idx.end()) {
-            //    create<order_deflation_object>([&](order_deflation_object &obj){
-            //       obj.order = order.id;
-            //       obj.last_deflation_id = deflation_id_type(0);
-            //       obj.frozen = deflation.amount;
-            //       obj.cleared = true;
-            //    }); 
-            // } else {
-            //    modify(*order_dflt_it, [&](order_deflation_object &obj){
-            //       obj.frozen = deflation.amount;
-            //       obj.cleared = true;
-            //    });
-            // }
          }
       }
    }
@@ -420,6 +406,22 @@ bool database::fill_order( const limit_order_object& order, const asset& pays, c
 
    if( pays == order.amount_for_sale() )
    {
+      // clear order deflation object
+      if (order.sell_price.base.asset_id == asset_id_type(0)) {
+         const auto &order_dflt_idx = get_index_type<order_deflation_index>().indices().get<by_order>();
+         auto order_dflt_it = order_dflt_idx.find(order.id);
+         if (order_dflt_it != order_dflt_idx.end()) {
+            const auto &dflt_idx = get_index_type<deflation_index>().indices().get<by_id>();
+            order_deflation_operation vop;
+            auto dlft_it = dflt_idx.rbegin();
+            vop.deflation_id = dlft_it->id;
+            vop.order = order.id;
+            vop.owner = order.seller;
+            vop.amount = order_dflt_it->frozen;
+            push_applied_operation( vop );            
+            remove(*order_dflt_it);
+         }
+      }
       remove( order );
       return true;
    }

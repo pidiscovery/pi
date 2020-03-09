@@ -228,12 +228,15 @@ namespace graphene { namespace chain {
                 dflt_it->order_cleared == false,
                 "order deflation is already cleared"
             );
-            // order may not be continuous
-            // FC_ASSERT(
-            //     limit_order_id_type(op.order) == dflt_it->order_cursor,
-            //     "deflation for this order-${order} is in wrong order",
-            //     ("order", op.order)
-            // );
+            // order should exists
+            auto &order_idx = db().get_index_type<limit_order_index>().indices().get<by_id>();
+            const auto &order_it = order_idx.find(op.order);
+            FC_ASSERT(
+                order_it != order_idx.end(),
+                "deflation order: ${order} not found",
+                ("order", op.order)
+            );            
+
             const auto &order_dflt_idx = db().get_index_type<order_deflation_index>().indices().get<by_order>();
             const auto &order_dflt_it = order_dflt_idx.find(op.order);
             if (order_dflt_it != order_dflt_idx.end()) {
@@ -251,6 +254,19 @@ namespace graphene { namespace chain {
     void_result order_deflation_evaluator::do_apply( const order_deflation_operation& op ) {
         auto &dflt_idx = db().get_index_type<deflation_index>().indices().get<by_id>();
         const auto &dflt_it = dflt_idx.find(op.deflation_id);
+
+        auto &order_idx = db().get_index_type<limit_order_index>().indices().get<by_id>();
+        const auto &order_it = order_idx.find(op.order);
+        // filter all non PIC orders first
+        if (order_it->sell_price.base.asset_id != asset_id_type(0)) {
+            db().modify(*dflt_it, [&](deflation_object &obj){
+                obj.order_cursor = op.order + 1;
+                if (op.order == dflt_it->last_order) {
+                    obj.order_cleared = true;
+                }
+            });
+            return void_result();
+        }
 
         const auto &order_dflt_idx = db().get_index_type<order_deflation_index>().indices().get<by_order>();
         const auto &order_dflt_it = order_dflt_idx.find(op.order);
@@ -279,19 +295,18 @@ namespace graphene { namespace chain {
         // update order balance
         share_type deflation_amount = 0;
         if (!cleared) {
-            auto &order_idx = db().get_index_type<limit_order_index>().indices().get<by_id>();
-            const auto &order_it = order_idx.find(op.owner);
-            // order sale asset is PIC, now do deflation
-            if (order_it->sell_price.base.asset_id == asset_id_type(0)) {
-                uint128_t amount = uint128_t(order_it->for_sale.value) * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
-                deflation_amount = int64_t(amount.to_uint64());
-                if (deflation_amount > 0) {
-                    db().modify(*order_it, [&](limit_order_object &obj){
-                        obj.for_sale -= deflation_amount;
-                    });
-                    // adjust total_core_in_orders of account
-                    db().pay_order(order_it->seller(db()), asset(0), asset(deflation_amount));
-                }
+            uint128_t amount = uint128_t(order_it->for_sale.value) * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
+            deflation_amount = int64_t(amount.to_uint64());
+            if (deflation_amount > 0) {
+                db().modify(*order_it, [&](limit_order_object &obj){
+                    obj.for_sale -= deflation_amount;
+                });
+                // adjust total_core_in_orders of account
+                db().pay_order(order_it->seller(db()), asset(0), asset(deflation_amount));
+                const auto& balances = order_it->seller(db()).statistics(db());
+                db().modify( balances, [&]( account_statistics_object& b ){
+                    b.total_core_in_orders -= deflation_amount;
+                });                
             }
         }
         db().modify(*dflt_it, [&](deflation_object &obj){
