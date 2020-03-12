@@ -115,14 +115,17 @@ void database::cancel_order( const limit_order_object& order, bool create_virtua
    // check deflation
    asset deflation(0, order.sell_price.base.asset_id);
    if (order.sell_price.base.asset_id == asset_id_type()) {
+      // try get order deflation object
+      const auto &order_dflt_idx = get_index_type<order_deflation_index>().indices().get<by_order>();
+      auto order_dflt_it = order_dflt_idx.find(order.id);      
+      // check deflation
       const auto &dflt_idx = get_index_type<deflation_index>().indices().get<by_id>();
       auto dlft_it = dflt_idx.rbegin();
       if (dlft_it != dflt_idx.rend() 
             && !dlft_it->order_cleared 
             && (dlft_it->last_order > limit_order_id_type(order.id) || dlft_it->last_order == limit_order_id_type(order.id))
             && (dlft_it->order_cursor < limit_order_id_type(order.id) || dlft_it->order_cursor == limit_order_id_type(order.id))) {
-         const auto &order_dflt_idx = get_index_type<order_deflation_index>().indices().get<by_order>();
-         auto order_dflt_it = order_dflt_idx.find(order.id);
+
          if (order_dflt_it == order_dflt_idx.end() || !order_dflt_it->cleared) {
             uint128_t amount = uint128_t(order.for_sale.value) * dlft_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
             deflation.amount = int64_t(amount.to_uint64());
@@ -138,11 +141,10 @@ void database::cancel_order( const limit_order_object& order, bool create_virtua
             vop.owner = order.seller;
             vop.amount = deflation.amount;
             push_applied_operation( vop );
-
-            // clear order_deflation_object when cancel
-            if (order_dflt_it != order_dflt_idx.end()) {
-               remove(*order_dflt_it);
-            }
+         }
+         // clear order_deflation_object
+         if (order_dflt_it != order_dflt_idx.end()) {
+            remove(*order_dflt_it);
          }
       }
    }
@@ -236,12 +238,12 @@ bool database::apply_order(const limit_order_object& new_order_object, bool allo
                      create<order_deflation_object>([&](order_deflation_object &obj){
                         obj.order = old_limit_itr->id;
                         obj.frozen = deflation_amount;
-                        obj.cleared = true;                     
+                        obj.cleared = true;
                      });
                   } else {
                      modify(*order_dflt_it, [&](order_deflation_object &obj){
                         obj.frozen = deflation_amount;
-                        obj.cleared = true;                     
+                        obj.cleared = true;
                      });
                   }
                   pay_order(old_limit_itr->seller(*this), asset(0), asset(deflation_amount));
@@ -412,13 +414,15 @@ bool database::fill_order( const limit_order_object& order, const asset& pays, c
          auto order_dflt_it = order_dflt_idx.find(order.id);
          if (order_dflt_it != order_dflt_idx.end()) {
             const auto &dflt_idx = get_index_type<deflation_index>().indices().get<by_id>();
-            order_deflation_operation vop;
             auto dlft_it = dflt_idx.rbegin();
+
+            order_deflation_operation vop;
             vop.deflation_id = dlft_it->id;
             vop.order = order.id;
             vop.owner = order.seller;
             vop.amount = order_dflt_it->frozen;
             push_applied_operation( vop );            
+            
             remove(*order_dflt_it);
          }
       }

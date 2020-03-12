@@ -290,6 +290,35 @@ asset limit_order_cancel_evaluator::do_apply(const limit_order_cancel_operation&
 { try {
    database& d = db();
 
+   // do deflation before hand to aviod double deflation
+   if (_order->sell_price.base.asset_id == asset_id_type(0)) {
+      auto &dflt_idx = db().get_index_type<deflation_index>().indices().get<by_id>();
+      const auto &dflt_it = dflt_idx.rbegin();
+      // have deflation and it's not finished
+      if (dflt_it != dflt_idx.rend() && !dflt_it->balance_cleared) {
+         const auto &acc_dflt_idx = db().get_index_type<account_deflation_index>().indices().get<by_owner>();
+         const auto &acc_dflt_it = acc_dflt_idx.find(_order->seller);
+         if (acc_dflt_it == acc_dflt_idx.end() 
+               || (acc_dflt_it->last_deflation_id < deflation_id_type(dflt_it->id)
+                  && !acc_dflt_it->cleared)) {
+            fc::uint128_t dlft_amt = fc::uint128_t(db().get_balance(_order->seller, asset_id_type(0)).amount.value) * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
+            if (acc_dflt_it == acc_dflt_idx.end()) {
+               db().create<account_deflation_object>([&](account_deflation_object &obj){
+                  obj.owner = _order->seller;
+                  obj.last_deflation_id = deflation_id_type(0);
+                  obj.frozen = dlft_amt.to_uint64();
+                  obj.cleared = true;
+               });
+            } else {
+               db().modify(*acc_dflt_it, [&](account_deflation_object &obj){
+                  obj.frozen = dlft_amt.to_uint64();
+                  obj.cleared = true;
+               });
+            }
+         }         
+      }      
+   }
+
    auto base_asset = _order->sell_price.base.asset_id;
    auto quote_asset = _order->sell_price.quote.asset_id;
    auto refunded = _order->amount_for_sale();
