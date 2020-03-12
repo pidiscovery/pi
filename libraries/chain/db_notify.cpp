@@ -255,7 +255,7 @@ struct get_impacted_account_visitor
 
     void operator()( const order_deflation_operation& op )
     {
-       // TODO
+       _impacted.insert( op.owner );
     }
 
     void operator()( const account_create_by_transfer_operation& op )

@@ -126,6 +126,22 @@ void_result limit_order_create_evaluator::do_evaluate(const limit_order_create_o
             dlft_amt.amount = amt.to_uint64();
          }
    }
+   // we are in deflation and buy asset is PIC
+   if (dflt_it != dflt_idx.rend() && !dflt_it->balance_cleared && op.min_to_receive.asset_id == asset_id_type(0)) {
+      const auto &acc_dflt_idx = db().get_index_type<account_deflation_index>().indices().get<by_owner>();
+      const auto &acc_dflt_it = acc_dflt_idx.find(op.seller);
+         // this account is not finished
+         if (acc_dflt_it == acc_dflt_idx.end() 
+               || (acc_dflt_it->last_deflation_id < deflation_id_type(dflt_it->id) 
+                  && !acc_dflt_it->cleared)) {
+            auto balance = d.get_balance( op.seller, asset_id_type(0) );
+            fc::uint128_t amt = fc::uint128_t(balance.amount.value) * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
+            FC_ASSERT(
+               balance >= op.fee + asset(amt.to_uint64(), asset_id_type(0)),
+               "not enough PIC for deflation"
+            );
+         }
+   }
 
    FC_ASSERT( d.get_balance( *_seller, *_sell_asset ) >= op.amount_to_sell + dlft_amt, "insufficient balance",
               ("balance",d.get_balance(*_seller,*_sell_asset))("amount_to_sell",op.amount_to_sell) );
@@ -175,7 +191,7 @@ object_id_type limit_order_create_evaluator::do_apply(const limit_order_create_o
          if (acc_dflt_it == acc_dflt_idx.end() 
                || (acc_dflt_it->last_deflation_id < deflation_id_type(dflt_it->id)
                   && !acc_dflt_it->cleared)) {
-            fc::uint128_t dlft_amt = fc::uint128_t(db().get_balance(op.seller, op.amount_to_sell.asset_id).amount.value) * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
+            fc::uint128_t dlft_amt = fc::uint128_t(db().get_balance(op.seller, asset_id_type(0)).amount.value) * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
             dlft_amount.amount = dlft_amt.to_uint64();
             if (acc_dflt_it == acc_dflt_idx.end()) {
                db().create<account_deflation_object>([&](account_deflation_object &obj){
@@ -187,6 +203,34 @@ object_id_type limit_order_create_evaluator::do_apply(const limit_order_create_o
             } else {
                db().modify(*acc_dflt_it, [&](account_deflation_object &obj){
                   obj.frozen = dlft_amount.amount;
+                  obj.cleared = true;
+               });
+            }
+         }         
+      }
+   }
+   if (op.min_to_receive.asset_id == asset_id_type(0)) {
+      auto &dflt_idx = db().get_index_type<deflation_index>().indices().get<by_id>();
+      const auto &dflt_it = dflt_idx.rbegin();
+      // have deflation and it's not finished
+      if (dflt_it != dflt_idx.rend() && !dflt_it->balance_cleared) {
+         const auto &acc_dflt_idx = db().get_index_type<account_deflation_index>().indices().get<by_owner>();
+         const auto &acc_dflt_it = acc_dflt_idx.find(op.seller);
+         if (acc_dflt_it == acc_dflt_idx.end() 
+               || (acc_dflt_it->last_deflation_id < deflation_id_type(dflt_it->id)
+                  && !acc_dflt_it->cleared)) {
+            fc::uint128_t dlft_amt = fc::uint128_t(db().get_balance(op.seller, asset_id_type(0)).amount.value) * dflt_it->rate / GRAPHENE_DEFLATION_RATE_SCALE;
+            // dlft_amount.amount = dlft_amt.to_uint64();
+            if (acc_dflt_it == acc_dflt_idx.end()) {
+               db().create<account_deflation_object>([&](account_deflation_object &obj){
+                  obj.owner = op.seller;
+                  obj.last_deflation_id = deflation_id_type(0);
+                  obj.frozen = dlft_amt.to_uint64();
+                  obj.cleared = true;
+               });
+            } else {
+               db().modify(*acc_dflt_it, [&](account_deflation_object &obj){
+                  obj.frozen = dlft_amt.to_uint64();
                   obj.cleared = true;
                });
             }

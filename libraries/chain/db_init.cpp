@@ -197,6 +197,7 @@ void database::initialize_evaluators()
    register_evaluator<limit_order_fee_config_evaluator>();
    register_evaluator<deflation_evaluator>();
    register_evaluator<account_deflation_evaluator>();
+   register_evaluator<order_deflation_evaluator>();
 }
 
 void database::initialize_indexes()
@@ -228,6 +229,7 @@ void database::initialize_indexes()
    add_index< primary_index<construction_capital_index> >();
    add_index< primary_index<deflation_index> >();
    add_index< primary_index<account_deflation_index> >();
+   add_index< primary_index<order_deflation_index> >();
 
    //Implementation object indexes
    add_index< primary_index<transaction_index                             > >();

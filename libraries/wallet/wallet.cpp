@@ -127,6 +127,8 @@ public:
    std::string operator()(const construction_capital_create_operation& op)const;
    std::string operator()(const deflation_operation& op)const;
    std::string operator()(const account_deflation_operation& op)const;
+   std::string operator()(const order_deflation_operation& op)const;
+   std::string operator()(const fill_order_operation& op)const;
 };
 
 template<class T>
@@ -2409,7 +2411,7 @@ signed_transaction create_account_by_transfer(string from,
          sum_stream << "Sum(" << orders.base << ')';
          double bid_sum = 0;
          double ask_sum = 0;
-         const int spacing = 20;
+         const int spacing = 18;
 
          auto prettify_num = [&]( double n )
          {
@@ -2436,8 +2438,8 @@ signed_transaction create_account_by_transfer(string from,
             << orders.base << ' ' << setw( spacing ) << sum_stream.str()
             << "   " << setw( spacing + 1 ) << "Price" << setw( spacing ) << orders.quote << ' ' << setw( spacing )
             << orders.base << ' ' << setw( spacing ) << sum_stream.str()
-            << "\n====================================================================================="
-            << "|=====================================================================================\n";
+            << "\n============================================================================="
+            << "|=============================================================================\n";
 
          for (int i = 0; i < bids.size() || i < asks.size() ; i++)
          {
@@ -3029,6 +3031,21 @@ std::string operation_printer::operator()(const account_deflation_operation& op)
 {
    out << "Account deflation - " << string(object_id_type(op.deflation_id)) << " owner:" << wallet.get_account(op.owner).name
       << " amount:" << wallet.get_asset(asset_id_type(0)).amount_to_pretty_string(op.amount);
+   return fee(op.fee);
+}
+
+std::string operation_printer::operator()(const order_deflation_operation& op) const
+{
+   out << "Account deflation - " << string(object_id_type(op.deflation_id)) << " owner:" << wallet.get_account(op.owner).name
+      << " order:" << string(object_id_type(op.order)) << " amount:" << wallet.get_asset(asset_id_type(0)).amount_to_pretty_string(op.amount);
+   return fee(op.fee);
+}
+
+std::string operation_printer::operator()(const fill_order_operation& op)const
+{
+   out << "Fill Order - " << string(object_id_type(op.order_id)) << " owner:" << wallet.get_account(op.account_id).name
+      << " pays:" << wallet.get_asset(op.pays.asset_id).amount_to_pretty_string(op.pays.amount)
+      << " receives:" << wallet.get_asset(op.receives.asset_id).amount_to_pretty_string(op.receives.amount);
    return fee(op.fee);
 }
 

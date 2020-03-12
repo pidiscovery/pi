@@ -426,6 +426,7 @@ FC_REFLECT_TYPENAME( graphene::chain::construction_capital_vote_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::construction_capital_summary_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::account_deflation_id_type )
 FC_REFLECT_TYPENAME( graphene::chain::deflation_id_type )
+FC_REFLECT_TYPENAME( graphene::chain::order_deflation_id_type )
 
 FC_REFLECT( graphene::chain::void_t, )
 
