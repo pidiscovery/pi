@@ -415,14 +415,22 @@ bool database::fill_order( const limit_order_object& order, const asset& pays, c
          if (order_dflt_it != order_dflt_idx.end()) {
             const auto &dflt_idx = get_index_type<deflation_index>().indices().get<by_id>();
             auto dlft_it = dflt_idx.rbegin();
-
-            order_deflation_operation vop;
-            vop.deflation_id = dlft_it->id;
-            vop.order = order.id;
-            vop.owner = order.seller;
-            vop.amount = order_dflt_it->frozen;
-            push_applied_operation( vop );            
-            
+            // if order deflation not run, create a virtual op
+            if (dlft_it != dflt_idx.rend() 
+                  && !dlft_it->order_cleared 
+                  && (dlft_it->order_cursor < limit_order_id_type(order.id) 
+                     || dlft_it->order_cursor == limit_order_id_type(order.id)) 
+                  && (dlft_it->last_order > limit_order_id_type(order.id) 
+                     || dlft_it->last_order == limit_order_id_type(order.id))) {
+               if (order_dflt_it->cleared && order_dflt_it->frozen > 0) {
+                  order_deflation_operation vop;
+                  vop.deflation_id = dlft_it->id;
+                  vop.order = order.id;
+                  vop.owner = order.seller;
+                  vop.amount = order_dflt_it->frozen;
+                  push_applied_operation( vop );            
+               }
+            }
             remove(*order_dflt_it);
          }
       }
