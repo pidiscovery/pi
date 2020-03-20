@@ -129,6 +129,7 @@ public:
    std::string operator()(const account_deflation_operation& op)const;
    std::string operator()(const order_deflation_operation& op)const;
    std::string operator()(const fill_order_operation& op)const;
+   std::string operator()(const limit_order_cancel_operation& op)const;
 };
 
 template<class T>
@@ -3047,6 +3048,13 @@ std::string operation_printer::operator()(const fill_order_operation& op)const
       << " pays:" << wallet.get_asset(op.pays.asset_id).amount_to_pretty_string(op.pays.amount)
       << " receives:" << wallet.get_asset(op.receives.asset_id).amount_to_pretty_string(op.receives.amount);
    return fee(op.fee);
+}
+
+std::string operation_printer::operator()(const limit_order_cancel_operation& op)const
+{
+   out << "Cancel Order - " << string(object_id_type(op.order));
+   return fee(op.fee);
+
 }
 
 std::string operation_result_printer::operator()(const void_result& x) const

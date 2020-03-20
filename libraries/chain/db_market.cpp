@@ -142,10 +142,10 @@ void database::cancel_order( const limit_order_object& order, bool create_virtua
             vop.amount = deflation.amount;
             push_applied_operation( vop );
          }
-         // clear order_deflation_object
-         if (order_dflt_it != order_dflt_idx.end()) {
-            remove(*order_dflt_it);
-         }
+      }
+      // clear order_deflation_object
+      if (order_dflt_it != order_dflt_idx.end()) {
+         remove(*order_dflt_it);
       }
    }
 
@@ -246,6 +246,11 @@ bool database::apply_order(const limit_order_object& new_order_object, bool allo
                         obj.cleared = true;
                      });
                   }
+                  // cut deflation amount from order
+                  modify(*old_limit_itr, [&](limit_order_object &obj){
+                     obj.for_sale -= deflation_amount;
+                  });
+                  // adjust account static record
                   pay_order(old_limit_itr->seller(*this), asset(0), asset(deflation_amount));
                }
             }
